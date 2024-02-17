@@ -3,6 +3,7 @@ const express = require("express");
 const passport = require("passport");
 const app = express();
 const cors = require("cors");
+const jwt = require("jwt-decode");
 require('dotenv').config();
 
 const dbConnect = require("./db/dbConnect");
@@ -22,16 +23,29 @@ passport.use(new GoogleStrategy( {
     }
 ))
 
-app.use(cors())
+// app.use(cors())
+
+const allowedOrigins = [
+    "http://localhost:3000",
+  ];
+  
+  const corsOptions = {
+    origin: allowedOrigins,
+    optionsSuccessStatus: 200,
+    credentials: true,
+  };
+  
+  app.use(cors(corsOptions));
+
 dbConnect();
 
-app.use((req, res, next) => {
-    // Allow to request from all origins
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content, Content-Type, Authorization");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-    next();
-})  
+// app.use((req, res, next) => {
+//     // Allow to request from all origins
+//     res.setHeader("Access-Control-Allow-Origin", "*");
+//     res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content, Content-Type, Authorization");
+//     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
+//     next();
+// })  
 
 app.use(express.json());
 
@@ -50,6 +64,14 @@ const normalizePort = val => {
 }
 
 const port = normalizePort(process.env.PORT || "4000");
+
+app.listen(port, () => {
+    console.log('Server is running on port 4000');
+});
+
+app.post('/balls', (req, res) => {
+    console.log("BALLS: ", req);
+})
 
 app.get('/auth/google',
   passport.authenticate('google', { scope:
