@@ -110,8 +110,8 @@ app.get('/auth/twitch/callback', async (req, res) => {
         const { code } = req.query;
 
         let response = await axios.post('https://id.twitch.tv/oauth2/token', {
-            client_id: process.env.CLIENT_ID,
-            client_secret: process.env.CLIENT_SECRET,
+            client_id: process.env.TWITCH_CLIENT_ID,
+            client_secret: process.env.TWITCH_CLIENT_SECRET,
             code,
             grant_type: 'authorization_code',
             redirect_uri: 'http://localhost:4000/auth/twitch/callback'
@@ -124,7 +124,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
         try {
             userResponse = await axios.get('https://api.twitch.tv/helix/users', {
                 headers: {
-                    'Client-ID': process.env.CLIENT_ID,
+                    'Client-ID': process.env.TWITCH_CLIENT_ID,
                     'Authorization': `Bearer ${accessToken}`
                 }
             });
@@ -132,8 +132,8 @@ app.get('/auth/twitch/callback', async (req, res) => {
             if (error.response && error.response.status === 401) {
                 // The access token has expired, use the refresh token to get a new one
                 response = await axios.post('https://id.twitch.tv/oauth2/token', {
-                    client_id: process.env.CLIENT_ID,
-                    client_secret: process.env.CLIENT_SECRET,
+                    client_id: process.env.TWITCH_CLIENT_ID,
+                    client_secret: process.env.TWITCH_CLIENT_SECRET,
                     refresh_token: response.data.refresh_token,
                     grant_type: 'refresh_token'
                 });
@@ -143,7 +143,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
                 // Retry the request with the new access token
                 userResponse = await axios.get('https://api.twitch.tv/helix/users', {
                     headers: {
-                        'Client-ID': process.env.CLIENT_ID,
+                        'Client-ID': process.env.TWITCH_CLIENT_ID,
                         'Authorization': `Bearer ${accessToken}`
                     }
                 });
