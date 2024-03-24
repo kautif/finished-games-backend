@@ -5,7 +5,7 @@ const app = express();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
-const User = require('./models/user.model');
+const User = require('./models/userModel');
 const ensureAuthenticated = require('./middleware/auth.middleware');
 require('dotenv').config();
 const cookieParser = require('cookie-parser');
@@ -86,13 +86,18 @@ app.post('/balls', (req, res) => {
 
 app.get('/protected/userid', ensureAuthenticated , async (req, res) => {
     try {
-        const user = await User.findOne({ _id: req.userId }, 'displayName');
-
+        const user = await User.findOne({ _id: req.userId }, 'twitchName');
+        const twitchId = await User.findOne({ _id: req.userId }, 'twitchId');
+        console.log("req.userId: ", req.userId);
         if (!user) {
             return res.status(404).send('User not found');
         }
 
-        res.status(200).send('Hi, ' + user.displayName);
+        res.status(200).send(
+            {
+                message: 'Hi, ' + user.twitchName,
+                twitchId: twitchId.twitchId
+            });
     } catch (err) {
         console.error(err);
         res.status(500).send('Server error');
@@ -154,6 +159,8 @@ app.get('/auth/twitch/callback', async (req, res) => {
         }
 
         const twitchUser = userResponse.data.data[0];
+        console.log("twitchUser: ", twitchUser);
+        let twitchId = userResponse.data.data[0].id;
 
         // Check if the user already exists in your database
         let user = await User.findOne({ twitchId: twitchUser.id });
@@ -162,8 +169,9 @@ app.get('/auth/twitch/callback', async (req, res) => {
         if (!user) {
             user = new User({
                 twitchId: twitchUser.id,
-                displayName: twitchUser.display_name,
+                twitchName: twitchUser.display_name,
                 profileImageUrl: twitchUser.profile_image_url,
+                games: []
                 // add any other information you want to store
             });
 
@@ -187,3 +195,51 @@ app.get( '/auth/google/callback',
         successRedirect: '/auth/google/success',
         failureRedirect: '/auth/google/failure'
 }));
+
+let newGame;
+app.post("/addgame", ((req, res, next) => {
+    console.log("addGame body: ", req.body.games);
+    User.findOne({
+        twitchName: req.body.twitchName,
+        games: {
+            $elemMatch: {
+                name: req.body.games.name
+            }
+        }
+    }).then(gameFound => {
+        if (gameFound.name === req.body.games.name) {
+            console.log("user already has this game");
+        } else {
+            console.log("User will add this game");
+            newGame = req.body.games;
+            console.log("newGame: ", req.body.games);
+        }
+    }).catch(err => {
+        console.log("psuedo Error: User doesn't have game. Adding it");
+        User.findOne({
+            twitchId: req.body.twitchId
+        }).then(user => {
+            user.games.push(req.body.games);
+            user.save()
+                .then(result => {
+                    res.status(201).send({
+                        message: `Game named ${req.body.games.name} added to ${req.body.twitchName}`
+                    })
+                }).catch(err => {
+                    res.status(500).send({
+                        message: `Failed to add game named ${req.body.games.name} to ${req.body.twitchName}`,
+                        error
+                    })
+                })
+        })
+    })
+}))
+
+app.post("/logout", async (req, res) => {
+    response = await axios.post('https://id.twitch.tv/oauth2/revoke', {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    client_id: process.env.TWITCH_CLIENT_ID,
+                    client_secret: process.env.TWITCH_CLIENT_SECRET,
+    })
+    return response;
+})

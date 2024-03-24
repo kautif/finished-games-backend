@@ -3,9 +3,16 @@ const Schema = mongoose.Schema;
 
 const UserSchema = new Schema({
   twitchId: String,
-  googleId: String,
-  displayName: String,
+  twitchName: String,
   profileImageUrl: String,
+  games: {
+    type: Array,
+    game: {
+      name: String,
+      img_url: String,
+      unique: [true, "This game is already on your profile"]
+    }
+  }
   // add any other fields you want to store
 });
 
