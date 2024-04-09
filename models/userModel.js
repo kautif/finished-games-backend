@@ -10,6 +10,7 @@ const UserSchema = new Schema({
     game: {
       name: String,
       img_url: String,
+      summary: String,
       unique: [true, "This game is already on your profile"]
     }
   }

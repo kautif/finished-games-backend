@@ -80,10 +80,6 @@ app.listen(port, () => {
     console.log('Server is running on port 4000');
 });
 
-app.post('/balls', (req, res) => {
-    console.log("BALLS: ", req);
-})
-
 app.get('/protected/userid', ensureAuthenticated , async (req, res) => {
     try {
         const user = await User.findOne({ _id: req.userId }, 'twitchName');
@@ -96,6 +92,7 @@ app.get('/protected/userid', ensureAuthenticated , async (req, res) => {
         res.status(200).send(
             {
                 message: 'Hi, ' + user.twitchName,
+                twitchName: user.twitchName,
                 twitchId: twitchId.twitchId
             });
     } catch (err) {
@@ -196,6 +193,17 @@ app.get( '/auth/google/callback',
         failureRedirect: '/auth/google/failure'
 }));
 
+app.get('/games', async (req, res) => {
+    User.findOne({
+        email: req.body.twitchName
+    }).then(response => {
+        console.log("getting games: ", response.games);
+        res.json({
+            response
+        })
+    })
+})
+
 let newGame;
 app.post("/addgame", ((req, res, next) => {
     console.log("addGame body: ", req.body.games);
@@ -234,6 +242,23 @@ app.post("/addgame", ((req, res, next) => {
         })
     })
 }))
+
+app.put("/updategame", (req, res) => {
+    console.log(req.body.twitchName);
+    console.log(req.body);
+    User.updateOne(
+        {
+        twitchName: req.body.twitchName, "games.name": req.body.games.name},
+        {
+            $set: {
+                "games.$.summary": req.body.games.summary
+            }
+        }).then(() => {
+            console.log("document updated")
+        }).catch((err) => {
+            console.error("Error: ", err.message);
+        })
+})
 
 app.post("/logout", async (req, res) => {
     response = await axios.post('https://id.twitch.tv/oauth2/revoke', {
