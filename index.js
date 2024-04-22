@@ -84,6 +84,7 @@ app.get('/protected/userid', ensureAuthenticated , async (req, res) => {
     try {
         const user = await User.findOne({ _id: req.userId }, 'twitchName');
         const twitchId = await User.findOne({ _id: req.userId }, 'twitchId');
+        const games = await User.findOne({ _id: req.userId }, 'games');
         console.log("req.userId: ", req.userId);
         if (!user) {
             return res.status(404).send('User not found');
@@ -93,7 +94,8 @@ app.get('/protected/userid', ensureAuthenticated , async (req, res) => {
             {
                 message: 'Hi, ' + user.twitchName,
                 twitchName: user.twitchName,
-                twitchId: twitchId.twitchId
+                twitchId: twitchId.twitchId,
+                games: games.games
             });
     } catch (err) {
         console.error(err);
@@ -258,6 +260,10 @@ app.put("/updategame", (req, res) => {
         }).catch((err) => {
             console.error("Error: ", err.message);
         })
+})
+
+app.get("/:username", (req, res, next) => {
+    console.log("user: ", req.params.username);
 })
 
 app.post("/logout", async (req, res) => {
