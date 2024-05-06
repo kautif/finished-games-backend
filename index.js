@@ -262,8 +262,18 @@ app.put("/updategame", (req, res) => {
         })
 })
 
-app.get("/:username", (req, res, next) => {
-    console.log("user: ", req.params.username);
+app.get("/api/user/", (req, res, next) => {
+    console.log("user: ", req.query.username);
+    User.findOne({
+        twitchName: req.query.username
+    }).then(userFound => {
+        console.log("userFound: ", userFound);
+        res.status(200).send({
+            user: userFound
+        })
+    }).catch(err => {
+        console.log("user not found: ", err);
+    })
 })
 
 app.post("/logout", async (req, res) => {
