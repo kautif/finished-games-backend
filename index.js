@@ -46,7 +46,7 @@ const allowedOrigins = [
 dbConnect();
 
 const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
-console.log("backendURL: ", backendURL);
+const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000"
 
 // app.use((req, res, next) => {
 //     // Allow to request from all origins
@@ -185,7 +185,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
 
         // Send the token to the client
         res.cookie('auth_token', token, { httpOnly: true, sameSite: 'strict' });
-        res.redirect('http://localhost:3000?verified=true');
+        res.redirect(`${frontendURL}?verified=true`);
     } catch (error) {
         console.error(error);
         res.status(500).send('Internal Server Error');
