@@ -46,6 +46,7 @@ const allowedOrigins = [
 dbConnect();
 
 const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
+console.log("backendURL: ", backendURL);
 
 // app.use((req, res, next) => {
 //     // Allow to request from all origins
