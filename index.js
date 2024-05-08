@@ -121,7 +121,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
             client_secret: process.env.TWITCH_CLIENT_SECRET,
             code,
             grant_type: 'authorization_code',
-            redirect_uri: `${backendURL}/auth/twitch/callback`
+            redirect_uri: 'https://finished-games-backend.onrender.com/auth/twitch/callback'
         });
 
         let accessToken = response.data.access_token;
