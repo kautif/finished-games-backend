@@ -45,6 +45,8 @@ const allowedOrigins = [
 
 dbConnect();
 
+const backendURL = process.env.REACT_APP_NODE_BACKEND || "http://localhost:4000";
+
 // app.use((req, res, next) => {
 //     // Allow to request from all origins
 //     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -118,7 +120,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
             client_secret: process.env.TWITCH_CLIENT_SECRET,
             code,
             grant_type: 'authorization_code',
-            redirect_uri: 'http://localhost:4000/auth/twitch/callback'
+            redirect_uri: `${backendURL}/auth/twitch/callback`
         });
 
         let accessToken = response.data.access_token;
