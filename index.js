@@ -185,7 +185,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         // Send the token to the client
-        res.cookie('auth_token', token, { httpOnly: true, sameSite: 'strict' });
+        res.cookie('auth_token', token, { httpOnly: true, sameSite: 'none', secure: true });
         res.redirect(`${frontendURL}?verified=true`);
     } catch (error) {
         console.error(error);
