@@ -33,6 +33,7 @@ passport.use(new GoogleStrategy( {
 
 const allowedOrigins = [
     "http://localhost:3000",
+    "https://victorysaga.netlify.app",
   ];
   
   const corsOptions = {
