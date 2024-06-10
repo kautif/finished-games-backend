@@ -117,15 +117,23 @@ app.get('/auth/twitch/callback', async (req, res) => {
     try {
         const { code } = req.query;
 
-        let response = await axios.post('https://id.twitch.tv/oauth2/token', {
-            client_id: process.env.TWITCH_CLIENT_ID,
-            client_secret: process.env.TWITCH_CLIENT_SECRET,
-            code,
-            grant_type: 'authorization_code',
-            redirect_uri: `${backendURL}/auth/twitch/callback`
-        });
+        const clientId = process.env.TWITCH_CLIENT_ID;
+        const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+        const grantType = 'authorization_code';
+        const redirectUri = `${backendURL}/auth/twitch/callback`;
 
-        let accessToken = response.data.access_token;
+        const requestBody = {
+            client_id: clientId,
+            client_secret: clientSecret,
+            code,
+            grant_type: grantType,
+            redirect_uri: redirectUri
+        };
+
+        let response = await axios.post('https://id.twitch.tv/oauth2/token', requestBody );
+        const responseData = await response.data;
+
+        let accessToken = responseData.access_token;
 
         // Call the Twitch API to get the user's information
         let userResponse;
@@ -162,8 +170,6 @@ app.get('/auth/twitch/callback', async (req, res) => {
         }
 
         const twitchUser = userResponse.data.data[0];
-        console.log("twitchUser: ", twitchUser);
-        let twitchId = userResponse.data.data[0].id;
 
         // Check if the user already exists in your database
         let user = await User.findOne({ twitchId: twitchUser.id });
@@ -174,10 +180,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
                 twitchId: twitchUser.id,
                 twitchName: twitchUser.display_name,
                 profileImageUrl: twitchUser.profile_image_url,
-                games: []
-                // add any other information you want to store
             });
-
             await user.save();
         }
 
@@ -250,8 +253,7 @@ app.post("/addgame", ((req, res, next) => {
 }))
 
 app.put("/updategame", (req, res) => {
-    console.log(req.body.twitchName);
-    console.log(req.body);
+    
     User.updateOne(
         {
         twitchName: req.body.twitchName, "games.name": req.body.games.name},
