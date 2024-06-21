@@ -19,7 +19,7 @@ var GoogleStrategy = require('passport-google-oauth2').Strategy;
 passport.use(new GoogleStrategy( {
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
-    callbackURL: "http://yourdomain:3000/auth/google/callback",
+    callbackURL: "http://localhost:3000/auth/google/callback",
     passReqToCallback: true
 },
     function(request, accessToken, refreshToken, profile, done) {
@@ -47,7 +47,10 @@ const allowedOrigins = [
 dbConnect();
 
 const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
-const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000"
+const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000";
+
+// const backendURL = "http://localhost:4000";
+// const frontendURL = "http://localhost:3000";
 
 // app.use((req, res, next) => {
 //     // Allow to request from all origins
