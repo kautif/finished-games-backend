@@ -119,6 +119,7 @@ app.get('/auth/google',
 app.get('/auth/twitch/callback', async (req, res) => {
     try {
         const { code } = req.query;
+        console.log("twitch callback: ", req.body);
 
         const clientId = process.env.TWITCH_CLIENT_ID;
         const clientSecret = process.env.TWITCH_CLIENT_SECRET;
@@ -173,7 +174,6 @@ app.get('/auth/twitch/callback', async (req, res) => {
         }
 
         const twitchUser = userResponse.data.data[0];
-
         // Check if the user already exists in your database
         let user = await User.findOne({ twitchId: twitchUser.id });
 
@@ -184,15 +184,22 @@ app.get('/auth/twitch/callback', async (req, res) => {
                 twitchName: twitchUser.display_name,
                 profileImageUrl: twitchUser.profile_image_url,
             });
+            res.status(200).send(
+                {
+                    twitchName: twitchUser.id,
+                    twitchId: twitchUser.display_name,
+                    games: twitchUser.games
+                });
             await user.save();
         }
-
+        
         // Generate a JWT token
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         // Send the token to the client
         res.cookie('auth_token', token, { httpOnly: true, sameSite: 'none', secure: true });
         res.redirect(`${frontendURL}?verified=true`);
+        // res.redirect(`${frontendURL}/games`);
     } catch (error) {
         console.error(error);
         res.status(500).send('Internal Server Error');
@@ -219,6 +226,7 @@ app.get('/games', async (req, res) => {
 let newGame;
 app.post("/addgame", ((req, res, next) => {
     console.log("addGame body: ", req.body.games);
+    console.log("req.body.twitchName: ", req.body.twitchName)
     User.findOne({
         twitchName: req.body.twitchName,
         games: {
@@ -239,6 +247,7 @@ app.post("/addgame", ((req, res, next) => {
         User.findOne({
             twitchId: req.body.twitchId
         }).then(user => {
+            console.log("/addgame user: ", user);
             user.games.push(req.body.games);
             user.save()
                 .then(result => {
