@@ -213,10 +213,11 @@ app.get( '/auth/google/callback',
 }));
 
 app.get('/games', async (req, res) => {
+    console.log("/games: ", req.query.twitchName);
     User.findOne({
-        email: req.body.twitchName
+        twitchName: req.query.twitchName
     }).then(response => {
-        console.log("getting games: ", response.games);
+        console.log("getting response: ", response);
         res.json({
             response
         })
@@ -225,8 +226,6 @@ app.get('/games', async (req, res) => {
 
 let newGame;
 app.post("/addgame", ((req, res, next) => {
-    console.log("addGame body: ", req.body.games);
-    console.log("req.body.twitchName: ", req.body.twitchName)
     User.findOne({
         twitchName: req.body.twitchName,
         games: {
