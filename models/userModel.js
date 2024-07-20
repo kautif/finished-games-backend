@@ -7,7 +7,8 @@ const GameSchema = new Schema({
     required: true
   },
   img_url: String,
-  summary: String
+  summary: String,
+  date_added: Date
 }, { _id: false });
 
 const UserSchema = new Schema({
