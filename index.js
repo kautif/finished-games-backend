@@ -270,7 +270,8 @@ app.put("/updategame", (req, res) => {
         twitchName: req.body.twitchName, "games.name": req.body.games.name},
         {
             $set: {
-                "games.$.summary": req.body.games.summary
+                "games.$.summary": req.body.games.summary,
+                "games.$.date_added": req.body.games.date_added
             }
         }).then(() => {
             console.log("document updated")
