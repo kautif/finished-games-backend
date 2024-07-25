@@ -25,7 +25,8 @@ const UserSchema = new Schema({
       },
       message: 'Game names must be unique'
     }
-  }
+  },
+  tokens: [{type: Object}]
 });
 
 const User = mongoose.model('User', UserSchema);

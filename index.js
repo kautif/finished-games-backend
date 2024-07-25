@@ -194,8 +194,22 @@ app.get('/auth/twitch/callback', async (req, res) => {
         }
         
         // Generate a JWT token
+        // 7/22/24: Watch to implement logout process
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
+        let oldTokens = user.tokens || [];
+
+        if (oldTokens.length) {
+            oldTokens = oldTokens.filter(t => {
+                const timeDiff = (Date.now() - parseInt(t.signedAt)) / 1000;
+                
+                if (timeDiff < 86400) {
+                    return t;
+                }
+            })
+        }
+
+        await User.findByIdAndUpdate(user._id, {tokens: [...oldTokens, {token, signedAt: Date.now().toString()}]})
         // Send the token to the client
         res.cookie('auth_token', token, { httpOnly: true, sameSite: 'none', secure: true });
         res.redirect(`${frontendURL}?verified=true`);
@@ -295,10 +309,15 @@ app.get("/api/user/", (req, res, next) => {
 })
 
 app.post("/logout", async (req, res) => {
+    console.log("logging out");
     response = await axios.post('https://id.twitch.tv/oauth2/revoke', {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     client_id: process.env.TWITCH_CLIENT_ID,
                     client_secret: process.env.TWITCH_CLIENT_SECRET,
+    }).then(result => {
+        console.log("logout result: ", result);
+    }).catch(err => {
+        console.log(err.message);
     })
     return response;
 })
