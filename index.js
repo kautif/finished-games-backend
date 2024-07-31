@@ -9,6 +9,8 @@ const User = require('./models/userModel');
 const ensureAuthenticated = require('./middleware/auth.middleware');
 require('dotenv').config();
 const cookieParser = require('cookie-parser');
+const querystring = require('querystring');
+
 
 app.use(cookieParser());
 
@@ -310,14 +312,36 @@ app.get("/api/user/", (req, res, next) => {
 
 app.post("/logout", async (req, res) => {
     console.log("logging out");
-    response = await axios.post('https://id.twitch.tv/oauth2/revoke', {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    client_id: process.env.TWITCH_CLIENT_ID,
-                    client_secret: process.env.TWITCH_CLIENT_SECRET,
-    }).then(result => {
-        console.log("logout result: ", result);
-    }).catch(err => {
-        console.log(err.message);
-    })
-    return response;
+    const token = req.cookies['auth_token'];
+    if (!token) {
+        console.log("No token found");
+        return res.status(400).send({ message: 'No token found' });
+    }
+    console.log("token==== ", token);
+    try {
+        const response = await axios.post(
+            'https://id.twitch.tv/oauth2/revoke',
+            querystring.stringify({
+                client_id: process.env.TWITCH_CLIENT_ID,
+                token: token
+            }),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+        console.log("Logout result: ", response.data);
+    } catch (err) {
+        console.log("Error revoking token: ", err.message);
+        // return res.status(500).send({ message: 'Failed to revoke token' });
+    }
+
+    Object.keys(req.cookies).forEach(cookieName => {
+        console.log("cookieName: ", cookieName);
+        res.clearCookie(cookieName, { path: '/' });
+    });
+
+    res.status(200).send({ message: 'Logged out successfully' });
+    return res;
 })
