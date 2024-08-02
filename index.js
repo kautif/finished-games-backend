@@ -1,4 +1,5 @@
 const http = require("http");
+const fetch = require("node-fetch");
 const express = require("express");
 const passport = require("passport");
 const app = express();
@@ -102,7 +103,8 @@ app.get('/protected/userid', ensureAuthenticated , async (req, res) => {
                 message: 'Hi, ' + user.twitchName,
                 twitchName: user.twitchName,
                 twitchId: twitchId.twitchId,
-                games: games.games
+                games: games.games,
+                accessToken
             });
     } catch (err) {
         console.error(err);
@@ -115,7 +117,7 @@ app.get('/auth/google',
       [ 'email', 'profile' ] }
 ));
 
-
+let accessToken;
 app.get('/auth/twitch/callback', async (req, res) => {
     try {
         const { code } = req.query;
@@ -137,7 +139,9 @@ app.get('/auth/twitch/callback', async (req, res) => {
         let response = await axios.post('https://id.twitch.tv/oauth2/token', requestBody );
         const responseData = await response.data;
 
-        let accessToken = responseData.access_token;
+        accessToken = responseData.access_token;
+        // res.cookie("accessToken", accessToken)
+        // res.cookie('auth_token', token, { httpOnly: true, sameSite: 'none', secure: true });
 
         // Call the Twitch API to get the user's information
         let userResponse;
@@ -159,6 +163,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
                 });
 
                 accessToken = response.data.access_token;
+                console.log("accessToken: ", accessToken);
 
                 // Retry the request with the new access token
                 userResponse = await axios.get('https://api.twitch.tv/helix/users', {
@@ -188,7 +193,7 @@ app.get('/auth/twitch/callback', async (req, res) => {
                 {
                     twitchName: twitchUser.id,
                     twitchId: twitchUser.display_name,
-                    games: twitchUser.games
+                    games: twitchUser.games,
                 });
             await user.save();
         }
@@ -309,15 +314,24 @@ app.get("/api/user/", (req, res, next) => {
 })
 
 app.post("/logout", async (req, res) => {
-    console.log("logging out");
-    response = await axios.post('https://id.twitch.tv/oauth2/revoke', {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    client_id: process.env.TWITCH_CLIENT_ID,
-                    client_secret: process.env.TWITCH_CLIENT_SECRET,
-    }).then(result => {
-        console.log("logout result: ", result);
-    }).catch(err => {
-        console.log(err.message);
-    })
+    console.log("logout req: ", req.body);
+    const authHeader = `Basic ${Buffer.from(`${process.env.TWITCH_CLIENT_ID}:${process.env.CLIENT_SECRET}`).toString('base64')}`;
+    response = await fetch('https://id.twitch.tv/oauth2/revoke', {
+        method: "POST",
+        headers: {
+            'Authorization': authHeader,
+            'Content-Type': "application/x-www-form-urlencoded",
+        },
+        body:  new URLSearchParams({
+            client_id: process.env.TWITCH_CLIENT_ID,
+            token: req.body.accessToken
+          })
+}).then(result => {
+    res.redirect(`${frontendURL}?verified=true`);
+    console.log("logout result: ", result);
+}).catch(err => {
+console.log(err);
+})
+
     return response;
 })

@@ -8,7 +8,8 @@ const GameSchema = new Schema({
   },
   img_url: String,
   summary: String,
-  date_added: Date
+  date_added: Date,
+  rank: String
 }, { _id: false });
 
 const UserSchema = new Schema({
