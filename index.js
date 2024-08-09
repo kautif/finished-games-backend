@@ -290,7 +290,8 @@ app.put("/updategame", (req, res) => {
         {
             $set: {
                 "games.$.summary": req.body.games.summary,
-                "games.$.date_added": req.body.games.date_added
+                "games.$.date_added": req.body.games.date_added,
+                "games.$.rank": req.body.games.rank
             }
         }).then(() => {
             console.log("document updated")
