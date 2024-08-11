@@ -9,7 +9,8 @@ const GameSchema = new Schema({
   img_url: String,
   summary: String,
   date_added: Date,
-  rank: String
+  rank: String,
+  rating: Number
 }, { _id: false });
 
 const UserSchema = new Schema({
