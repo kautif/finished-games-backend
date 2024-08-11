@@ -10,6 +10,8 @@ const User = require('./models/userModel');
 const ensureAuthenticated = require('./middleware/auth.middleware');
 require('dotenv').config();
 const cookieParser = require('cookie-parser');
+const querystring = require('querystring');
+
 
 app.use(cookieParser());
 
@@ -215,10 +217,8 @@ app.get('/auth/twitch/callback', async (req, res) => {
         }
 
         await User.findByIdAndUpdate(user._id, {tokens: [...oldTokens, {token, signedAt: Date.now().toString()}]})
-        // Send the token to the client
-        res.cookie('auth_token', token, { httpOnly: true, sameSite: 'none', secure: true });
-        res.redirect(`${frontendURL}?verified=true`);
-        // res.redirect(`${frontendURL}/games`);
+
+        res.redirect(`${frontendURL}?verified=true&auth_token=${token}&twitch_token=${accessToken}`);
     } catch (error) {
         console.error(error);
         res.status(500).send('Internal Server Error');
@@ -315,24 +315,44 @@ app.get("/api/user/", (req, res, next) => {
 })
 
 app.post("/logout", async (req, res) => {
-    console.log("logout req: ", req.body);
-    const authHeader = `Basic ${Buffer.from(`${process.env.TWITCH_CLIENT_ID}:${process.env.CLIENT_SECRET}`).toString('base64')}`;
-    response = await fetch('https://id.twitch.tv/oauth2/revoke', {
-        method: "POST",
-        headers: {
-            'Authorization': authHeader,
-            'Content-Type': "application/x-www-form-urlencoded",
-        },
-        body:  new URLSearchParams({
-            client_id: process.env.TWITCH_CLIENT_ID,
-            token: req.body.accessToken
-          })
-}).then(result => {
-    res.redirect(`${frontendURL}?verified=true`);
-    console.log("logout result: ", result);
-}).catch(err => {
-console.log(err);
-})
+    console.log("logging out");
+    const token = req.headers['twitch_token'];
+    
+    if (!token) {
+        console.log("No token found");
+        return res.status(400).send({ message: 'No token found' });
+    }
+    try {
+        await axios.post(
+            'https://id.twitch.tv/oauth2/revoke',
+            querystring.stringify({
+                client_id: process.env.TWITCH_CLIENT_ID,
+                token: token
+            }),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+        );
+    } catch (err) {
+        console.log("Error revoking token: ", err.message);
+        // return res.status(500).send({ message: 'Failed to revoke token' });
+    }
 
-    return response;
+    // const authHeader = `Basic ${Buffer.from(`${process.env.TWITCH_CLIENT_ID}:${process.env.CLIENT_SECRET}`).toString('base64')}`;
+    // response = await fetch('https://id.twitch.tv/oauth2/revoke', {
+    //     method: "POST",
+    //     headers: {
+    //         'Authorization': authHeader,
+    //         'Content-Type': "application/x-www-form-urlencoded",
+    //     },
+    //     body:  new URLSearchParams({
+    //         client_id: process.env.TWITCH_CLIENT_ID,
+    //         token: req.body.accessToken
+    //       })
+    // })
+
+    res.status(200).send({ message: 'Logged out successfully' });
+    return res;
 })

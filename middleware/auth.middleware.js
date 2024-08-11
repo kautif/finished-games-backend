@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const ensureAuthenticated = (req, res, next) => {
     // Extract the token from the auth_token cookie
-    const token = req.cookies.auth_token;
+    const token = req.headers['auth_token'];
 
     if (!token) {
         return res.status(401).send('Unauthorized');
