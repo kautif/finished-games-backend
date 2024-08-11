@@ -212,10 +212,8 @@ app.get('/auth/twitch/callback', async (req, res) => {
         }
 
         await User.findByIdAndUpdate(user._id, {tokens: [...oldTokens, {token, signedAt: Date.now().toString()}]})
-        // Send the token to the client
-        res.cookie('auth_token', token, { httpOnly: true, sameSite: 'none', secure: true });
-        res.redirect(`${frontendURL}?verified=true`);
-        // res.redirect(`${frontendURL}/games`);
+
+        res.redirect(`${frontendURL}?verified=true&auth_token=${token}&twitch_token=${accessToken}`);
     } catch (error) {
         console.error(error);
         res.status(500).send('Internal Server Error');
@@ -312,12 +310,12 @@ app.get("/api/user/", (req, res, next) => {
 
 app.post("/logout", async (req, res) => {
     console.log("logging out");
-    const token = req.cookies['auth_token'];
+    const token = req.headers['twitch_token'];
+    
     if (!token) {
         console.log("No token found");
         return res.status(400).send({ message: 'No token found' });
     }
-    console.log("token==== ", token);
     try {
         const response = await axios.post(
             'https://id.twitch.tv/oauth2/revoke',
@@ -331,7 +329,6 @@ app.post("/logout", async (req, res) => {
                 }
             }
         );
-        console.log("Logout result: ", response.data);
     } catch (err) {
         console.log("Error revoking token: ", err.message);
         // return res.status(500).send({ message: 'Failed to revoke token' });
