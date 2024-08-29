@@ -48,11 +48,9 @@ const allowedOrigins = [
   app.use(cors(corsOptions));
 
 dbConnect();
-// const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
-const backendURL = "https://finished-games-backend.onrender.com/";
 
-// const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000";
-const frontendURL = "https://victorysaga.netlify.app/";
+const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
+const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 // const backendURL = "http://localhost:4000";
 // const frontendURL = "http://localhost:3000";
