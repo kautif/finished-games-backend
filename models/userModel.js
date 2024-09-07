@@ -6,6 +6,7 @@ const GameSchema = new Schema({
     type: String,
     required: true
   },
+  custom_game: String,
   img_url: String,
   summary: String,
   date_added: Date,
