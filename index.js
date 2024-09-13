@@ -1,5 +1,8 @@
 const http = require("http");
 const fetch = require("node-fetch");
+const nodemailer = require('nodemailer');
+const {google} = require('googleapis');
+
 const express = require("express");
 const passport = require("passport");
 const app = express();
@@ -37,6 +40,7 @@ passport.use(new GoogleStrategy( {
 const allowedOrigins = [
     "http://localhost:3000",
     "https://victorysaga.netlify.app",
+    "https://victoryhistory.gg/"
   ];
   
   const corsOptions = {
@@ -52,8 +56,6 @@ dbConnect();
 const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
 const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000";
 
-// const backendURL = "http://localhost:4000";
-// const frontendURL = "http://localhost:3000";
 
 // app.use((req, res, next) => {
 //     // Allow to request from all origins
@@ -118,6 +120,48 @@ app.get('/auth/google',
   passport.authenticate('google', { scope:
       [ 'email', 'profile' ] }
 ));
+
+const oAuth2Client = new google.auth.OAuth2(
+    process.env.MAILER_CLIENT_ID,
+    process.env.MAILER_SECRET,
+    'https://localhost:3000'
+  );
+
+  oAuth2Client.setCredentials({
+    refresh_token: '1//043Gprms0BPHfCgYIARAAGAQSNwF-L9IrEmczCmwIpZ96txnmL1CzHR0EW3Q9GV4eBjexUebtCCjo7iZPFBqbvQv2ZzwgVVLvphM'
+  });
+
+  async function sendMail(username, issue) {
+    const transporter = nodemailer.createTransport({
+        service: 'hotmail',
+        auth: {
+          user: 'kautif@hotmail.com',
+          pass: 'Gourai_con1!74'
+        }
+      });
+
+      const mailOptions = {
+        from: 'kautif@hotmail.com',
+        to: 'kautif@gmail.com',
+        subject: 'Test Email',
+        text: 'This is a test email sent from Outlook using Nodemailer.'
+      };
+      
+      transporter.sendMail(mailOptions, function (err, info) {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log('Email sent: ' + info.response);
+        }
+      });
+  }
+    
+
+  app.post('/send-email', (req, res) => {
+    const { username, issue} = req.body;
+
+    sendMail(username, issue);
+  });
 
 let accessToken;
 app.get('/auth/twitch/callback', async (req, res) => {
