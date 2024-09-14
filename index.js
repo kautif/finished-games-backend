@@ -133,20 +133,28 @@ const oAuth2Client = new google.auth.OAuth2(
     refresh_token: '1//043Gprms0BPHfCgYIARAAGAQSNwF-L9IrEmczCmwIpZ96txnmL1CzHR0EW3Q9GV4eBjexUebtCCjo7iZPFBqbvQv2ZzwgVVLvphM'
   });
 
-  async function sendMail(username, issue) {
-    const transporter = nodemailer.createTransport({
-        service: 'hotmail',
+  async function sendMail(username, topic, message) {
+    const transporter = nodemailer.createTransport({    
+        host: "smtpout.secureserver.net",  
+        secure: true,
+        secureConnection: false, // TLS requires secureConnection to be false
+        tls: {
+            ciphers:'SSLv3'
+        },
+        requireTLS:true,
+        port: 465,
+        debug: true,
         auth: {
-          user: 'kautif@hotmail.com',
-          pass: 'Gourai_con1!74'
+            user: "stepone@victoryhistory.gg",
+            pass: "(V1ct0ry_4cc0unt)"
         }
-      });
+    });
 
       const mailOptions = {
-        from: 'kautif@hotmail.com',
-        to: 'kautif@gmail.com',
-        subject: 'Test Email',
-        text: 'This is a test email sent from Outlook using Nodemailer.'
+        from: 'support@victoryhistory.gg',
+        to: 'support@victoryhistory.gg',
+        subject: `Feedback from ${username}`,
+        text: `user: ${username} \n topic: ${topic} \n message: ${message}`
       };
       
       transporter.sendMail(mailOptions, function (err, info) {
@@ -160,9 +168,11 @@ const oAuth2Client = new google.auth.OAuth2(
     
 
   app.post('/send-email', (req, res) => {
-    const { username, issue} = req.body;
-
-    sendMail(username, issue);
+    const { username, topic, message} = req.body;
+    console.log(username);
+    console.log(topic);
+    console.log(message);
+    sendMail(username, topic, message);
   });
 
 let accessToken;
@@ -345,6 +355,26 @@ app.put("/updategame", (req, res) => {
         }).catch((err) => {
             console.error("Error: ", err.message);
         })
+})
+
+app.delete("/deletegame", (req, res) => {
+    const {twitchName} = req.body;
+    const {name} = req.body.games;
+    console.log("twitchName", twitchName);
+    console.log("game", name);
+    User.updateOne({
+        twitchName: twitchName
+    },
+    {
+        $pull: {
+            games: {
+                name: name
+            }
+        }
+    }, (err, result) => {
+        if (err) throw err;
+        console.log(result.modifiedCount + " game(s) deleted");
+    })
 })
 
 app.get("/api/user/", (req, res, next) => {
