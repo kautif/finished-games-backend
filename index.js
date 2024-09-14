@@ -40,7 +40,7 @@ passport.use(new GoogleStrategy( {
 const allowedOrigins = [
     "http://localhost:3000",
     "https://victorysaga.netlify.app",
-    "https://victoryhistory.gg"
+    "https://victoryhistory.gg",
     "https://www.victoryhistory.gg"
   ];
   
