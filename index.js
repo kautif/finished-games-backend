@@ -136,7 +136,7 @@ const oAuth2Client = new google.auth.OAuth2(
 
   async function sendMail(username, topic, message) {
     const transporter = nodemailer.createTransport({    
-        host: "smtpout.secureserver.net",  
+        host: process.env.FORM_HOST,  
         secure: true,
         secureConnection: false, // TLS requires secureConnection to be false
         tls: {
@@ -146,18 +146,17 @@ const oAuth2Client = new google.auth.OAuth2(
         port: 465,
         debug: true,
         auth: {
-            user: "stepone@victoryhistory.gg",
-            pass: "(V1ct0ry_4cc0unt)"
+            user: process.env.FORM_USER,
+            pass: process.env.FORM_PW
         }
     });
 
       const mailOptions = {
         from: 'support@victoryhistory.gg',
         to: 'support@victoryhistory.gg',
-        subject: `Feedback from ${username}`,
+        subject: `FEEDBACK from ${username}`,
         text: `user: ${username} \n topic: ${topic} \n message: ${message}`
       };
-      
       transporter.sendMail(mailOptions, function (err, info) {
         if (err) {
           console.log(err);
@@ -170,9 +169,6 @@ const oAuth2Client = new google.auth.OAuth2(
 
   app.post('/send-email', (req, res) => {
     const { username, topic, message} = req.body;
-    console.log(username);
-    console.log(topic);
-    console.log(message);
     sendMail(username, topic, message);
   });
 
