@@ -1,6 +1,8 @@
 const http = require("http");
 const fetch = require("node-fetch");
 const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
+
 const {google} = require('googleapis');
 
 const express = require("express");
@@ -164,11 +166,53 @@ const oAuth2Client = new google.auth.OAuth2(
           console.log('Email sent: ' + info.response);
         }
       });
-  }
-    
+  }    
 
   app.post('/send-email', (req, res) => {
     const { username, topic, message} = req.body;
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const msg = {
+    to: 'support@victoryhistory.gg',
+    from: 'support@victoryhistory.gg', // Use the email address or domain you verified above
+    subject: `FEEDBACK from ${username}`,
+    text: `TOPIC: ${topic} \n MESSAGE: ${message}`
+    };
+    //ES8
+    (async () => {
+    try {
+        await sgMail.send(msg);
+    } catch (error) {
+        console.error(error);
+
+        if (error.response) {
+        console.error(error.response.body)
+        }
+    }
+    })();
+    sendMail(username, topic, message);
+  });
+
+  app.post('/send-report', (req, res) => {
+    const { user, issue, details} = req.body;
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    const msg = {
+    to: 'support@victoryhistory.gg',
+    from: 'support@victoryhistory.gg', // Use the email address or domain you verified above
+    subject: `REPORT about ${user}`,
+    text: `ISSUE: ${issue} \n DETAILS: ${details}`
+    };
+    //ES8
+    (async () => {
+    try {
+        await sgMail.send(msg);
+    } catch (error) {
+        console.error(error);
+
+        if (error.response) {
+        console.error(error.response.body)
+        }
+    }
+    })();
     sendMail(username, topic, message);
   });
 
