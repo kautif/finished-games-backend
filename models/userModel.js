@@ -17,6 +17,7 @@ const GameSchema = new Schema({
 const UserSchema = new Schema({
   twitchId: String,
   twitchName: String,
+  twitch_default: String,
   profileImageUrl: String,
   games: {
     type: [GameSchema],
