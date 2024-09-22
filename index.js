@@ -123,12 +123,9 @@ app.get('/protected/userid', ensureAuthenticated , async (req, res) => {
 
 app.get('/getusers', async (req, res) => {
     const users = await User.find({ twitchName: {$regex: req.query.user}});
-
     res.status(200).send({
         users: users
     })
-    // console.log("backend users: ", req.query.user);
-    // console.log("backend users: ", users);
 })
 
 app.get('/auth/google',
