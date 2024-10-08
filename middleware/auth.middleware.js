@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { generateAccessToken } = require("../services/generateTokens");
+const { generateAuthToken } = require("../services/generateTokens");
 
 const ensureAuthenticated = (req, res, next) => {
   const token = req.headers["auth_token"];
@@ -39,7 +39,7 @@ const ensureAuthenticated = (req, res, next) => {
             }
 
             // Generate a new access token and send it in the response
-            const newAccessToken = generateAccessToken(refreshDecoded.userId);
+            const newAccessToken = generateAuthToken(refreshDecoded.userId);
             res.setHeader("auth_token", newAccessToken); // Send the new token back in the headers
             res.header("Access-Control-Expose-Headers", "auth_token");
             req.userId = refreshDecoded.userId; // Assign the user ID to the request

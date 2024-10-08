@@ -13,7 +13,7 @@ const axios = require("axios");
 const User = require("./models/userModel");
 const ensureAuthenticated = require("./middleware/auth.middleware");
 const {
-  generateAccessToken,
+  generateAuthToken,
   generateRefreshToken,
 } = require("./services/generateTokens");
 
@@ -302,7 +302,7 @@ app.get("/auth/twitch/callback", async (req, res) => {
 
     // Generate a JWT token
     // 7/22/24: Watch to implement logout process
-    const token = generateAccessToken(user._id);
+    const token = generateAuthToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
     let oldTokens = user.tokens || [];
@@ -496,4 +496,9 @@ app.post("/logout", async (req, res) => {
 
   res.status(200).send({ message: "Logged out successfully" });
   return res;
+});
+
+// Route for token generation (login simulation)
+app.get("/validated-auth-token", ensureAuthenticated, (req, res) => {
+  return res.status(200).json("Auth Token is Valid");
 });
