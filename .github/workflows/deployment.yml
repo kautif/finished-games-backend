@@ -1,0 +1,28 @@
+name: Deploy to Droplet
+
+on:
+  push:
+    branches:
+      - main, deployment
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+    - name: Deploy to Droplet
+      env:
+        GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
+        DO_SERVER_IP: ${{ secrets.DO_SERVER_IP }}
+        DO_SERVER_PASSWORD: ${{ secrets.DO_SERVER_PASSWORD }}
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y sshpass
+        sshpass -p $DO_SERVER_PASSWORD ssh -o StrictHostKeyChecking=no root@$DO_SERVER_IP << 'EOF'
+          cd /path/to/your/project
+          git pull https://$GITHUB_PAT@github.com/kautif/finished-games-backend.git
+          npm install
+          pm2 restart "finished-games-backend" || pm2 start npm --name "finished-games-backend" -- run start
+        EOF
