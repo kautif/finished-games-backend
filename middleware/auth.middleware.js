@@ -4,9 +4,11 @@ const { generateAuthToken } = require("../services/generateTokens");
 const ensureAuthenticated = (req, res, next) => {
   const token = req.headers["auth_token"];
   const refreshToken = req.headers["refresh_token"]; // Assuming the refresh token is sent in headers
-
+  console.log("token", token);
+  console.log("refreshToken", refreshToken);
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
+      console.log("err", err);
       if (!token) {
         return res.status(401).send("Unauthorized: No token provided");
       }
