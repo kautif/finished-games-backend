@@ -56,6 +56,7 @@ const corsOptions = {
   origin: allowedOrigins,
   optionsSuccessStatus: 200,
   credentials: true,
+  allowedHeaders: ['Content-Type', 'Authorization', 'auth_token', 'refresh_token'],
 };
 
 app.use(cors(corsOptions));
