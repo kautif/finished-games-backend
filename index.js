@@ -68,10 +68,6 @@ const corsOptions = {
 
 app.options('*', cors(corsOptions)); // Allow preflight across all routes
 
-app.use((req, res, next) => {
-  console.log("All Request Headers:", req.headers);
-  next();
-});
 
 dbConnect();
 
