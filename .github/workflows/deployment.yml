@@ -24,5 +24,6 @@ jobs:
           cd dev/finished-games/finished-games-backend
           git pull https://$GITHUB_PAT@github.com/kautif/finished-games-backend.git main
           npm install
-          pm2 restart "finished-games-backend" || pm2 start npm --name "finished-games-backend" -- run start
+          pm2 stop "finished-games-backend" || true
+          pm2 start npm --name "finished-games-backend" -- run start
         EOF
