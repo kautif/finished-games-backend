@@ -6,6 +6,7 @@ const ensureAuthenticated = (req, res, next) => {
   const refreshToken = req.headers["refresh_token"]; // Assuming the refresh token is sent in headers
   console.log("token", token);
   console.log("refreshToken", refreshToken);
+  console.log("All Request Headers:", req.headers);
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       console.log("err", err);
