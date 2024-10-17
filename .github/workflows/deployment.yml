@@ -21,7 +21,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y sshpass
         sshpass -p $DO_SERVER_PASSWORD ssh -o StrictHostKeyChecking=no root@$DO_SERVER_IP << 'EOF'
-          cd /dev/finished-games/finished-games-backend
+          cd dev/finished-games/finished-games-backend
           git pull https://$GITHUB_PAT@github.com/kautif/finished-games-backend.git main
           npm install
           pm2 restart "finished-games-backend" || pm2 start npm --name "finished-games-backend" -- run start
