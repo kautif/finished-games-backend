@@ -73,26 +73,26 @@ dbConnect();
 const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
 const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000";
 
-app.use((req, res, next) => {
-  // Allow to request from all origins
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content, Content-Type, Authorization"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-  );
-  next();
-});
-
 // app.use((req, res, next) => {
+//   // Allow to request from all origins
 //   res.setHeader("Access-Control-Allow-Origin", "*");
-//   res.header("Access-Control-Allow-Origin", "*");
-//   res.setHeader("Content-Security-Policy", "default-src 'self'");
+//   res.setHeader(
+//     "Access-Control-Allow-Headers",
+//     "Origin, X-Requested-With, Content, Content-Type, Authorization"
+//   );
+//   res.setHeader(
+//     "Access-Control-Allow-Methods",
+//     "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+//   );
 //   next();
 // });
+
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Origin", "*");
+  res.setHeader("Content-Security-Policy", "default-src 'self'");
+  next();
+});
 
 const normalizePort = (val) => {
   const port = parseInt(val, 10);
