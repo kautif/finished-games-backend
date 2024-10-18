@@ -5,8 +5,6 @@ const ensureAuthenticated = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const isRefreshToken = authHeader?.includes("Bearer");
 
-  console.log("Headers:", req.headers);
-
   // Handle missing token
   if (!authHeader) {
     return res.status(401).send("Unauthorized: No token provided");
