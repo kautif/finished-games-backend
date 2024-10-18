@@ -56,32 +56,36 @@ const allowedOrigins = [
 const corsOptions = {
   origin: allowedOrigins,
   optionsSuccessStatus: 200,
-  credentials: true,
   allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'auth_token',
-    'refresh_token',
+    "Content-Type",
+    "Authorization",
+    "twitch_token",
+    "auth_token",
   ],
-  exposedHeaders: ['Authorization', 'auth_token', 'refresh_token'],
+  exposedHeaders: ["Authorization"],
 };
 
-app.options('*', cors(corsOptions)); // Allow preflight across all routes
-
+app.use(cors(corsOptions)); // Apply CORS settings
+app.options("*", cors(corsOptions)); // Allow preflight across all routes
 
 dbConnect();
 
 const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
 const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000";
 
-// app.use((req, res, next) => {
-//     // Allow to request from all origins
-//     res.setHeader("Access-Control-Allow-Origin", "*");
-//     res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content, Content-Type, Authorization");
-//     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS");
-//     next();
-// })
-
+app.use((req, res, next) => {
+  // Allow to request from all origins
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content, Content-Type, Authorization"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+  );
+  next();
+});
 
 // app.use((req, res, next) => {
 //   res.setHeader("Access-Control-Allow-Origin", "*");
