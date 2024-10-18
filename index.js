@@ -56,7 +56,7 @@ const allowedOrigins = [
 const corsOptions = {
   origin: allowedOrigins,
   optionsSuccessStatus: 200,
-  allowedHeaders: ["Content-Type", "Authorization", "twitch_token"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: ["Authorization"],
 };
 
@@ -464,13 +464,11 @@ app.get("/api/user/", (req, res, next) => {
 
 app.post("/logout", async (req, res) => {
   console.log("logging out");
-  const token = req.headers["twitch_token"];
+  const token = req.headers["authorization"];
 
   if (!token) {
     console.log("No token found");
-    return res
-      .status(400)
-      .send({ message: "No token found", data: req.headers });
+    return res.status(400).send({ message: "No token found" });
   }
   try {
     await axios.post(
