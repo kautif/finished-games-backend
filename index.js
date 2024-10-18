@@ -56,12 +56,7 @@ const allowedOrigins = [
 const corsOptions = {
   origin: allowedOrigins,
   optionsSuccessStatus: 200,
-  allowedHeaders: [
-    "Content-Type",
-    "Authorization",
-    "twitch_token",
-    "auth_token",
-  ],
+  allowedHeaders: ["Content-Type", "Authorization", "twitch_token"],
   exposedHeaders: ["Authorization"],
 };
 
