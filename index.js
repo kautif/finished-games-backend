@@ -468,7 +468,9 @@ app.post("/logout", async (req, res) => {
 
   if (!token) {
     console.log("No token found");
-    return res.status(400).send({ message: "No token found" });
+    return res
+      .status(400)
+      .send({ message: "No token found", data: req.headers });
   }
   try {
     await axios.post(
