@@ -299,11 +299,11 @@ app.get("/auth/twitch/callback", async (req, res) => {
         twitchName: twitchUser.display_name,
         profileImageUrl: twitchUser.profile_image_url,
       });
-      res.status(200).send({
-        twitchName: twitchUser.id,
-        twitchId: twitchUser.display_name,
-        games: twitchUser.games,
-      });
+      // res.status(200).send({
+      //   twitchName: twitchUser.id,
+      //   twitchId: twitchUser.display_name,
+      //   games: twitchUser.games,
+      // });
       await user.save();
     }
 
