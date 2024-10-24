@@ -296,8 +296,9 @@ app.get("/auth/twitch/callback", async (req, res) => {
     if (!user) {
       user = new User({
         twitchId: twitchUser.id,
-        twitchName: twitchUser.display_name,
+        twitch_default: twitchUser.display_name,
         profileImageUrl: twitchUser.profile_image_url,
+        twitchName: twitchUser.display_name.toLowerCase()
       });
       // res.status(200).send({
       //   twitchName: twitchUser.id,
