@@ -394,7 +394,7 @@ app.post("/addgame", (req, res, next) => {
           .catch((err) => {
             res.status(500).send({
               message: `Failed to add game named ${req.body.games.name} to ${req.body.twitchName}`,
-              error,
+              err,
             });
           });
       });
