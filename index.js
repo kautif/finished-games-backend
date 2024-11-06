@@ -183,7 +183,7 @@ app.post("/send-email", (req, res) => {
     to: "support@victoryhistory.gg",
     from: "support@victoryhistory.gg", // Use the email address or domain you verified above
     subject: `FEEDBACK from ${username}`,
-    text: `TOPIC: ${topic} \n MESSAGE: ${message}`,
+    text: `USER: ${username} \n TOPIC: ${topic} \n MESSAGE: ${message}`,
   };
   //ES8
   (async () => {
@@ -207,7 +207,7 @@ app.post("/send-report", (req, res) => {
     to: "support@victoryhistory.gg",
     from: "support@victoryhistory.gg", // Use the email address or domain you verified above
     subject: `REPORT about ${user}`,
-    text: `ISSUE: ${issue} \n DETAILS: ${details}`,
+    text: `USER: ${user} \n ISSUE: ${issue} \n DETAILS: ${details}`,
   };
   //ES8
   (async () => {
