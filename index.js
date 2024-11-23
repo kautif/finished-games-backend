@@ -447,6 +447,17 @@ app.delete("/deletegame", (req, res) => {
   );
 });
 
+app.delete("/deleteuser", (req, res) => {
+  const { twitchName } = req.body;
+  User.deleteOne({ twitchName: twitchName}, (err, result) => {
+    if (err) {
+      throw err;
+    } else {
+      console.log(`delete user ${twitchName}: `, result);
+    }
+  })
+})
+
 app.get("/api/user/", (req, res, next) => {
   console.log("user: ", req.query.username);
   User.findOne({
