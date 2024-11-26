@@ -10,7 +10,10 @@ const passport = require("passport");
 const app = express();
 const cors = require("cors");
 const axios = require("axios");
+
 const User = require("./models/userModel");
+const Feedback = require("./models/feedbackModel");
+
 const ensureAuthenticated = require("./middleware/auth.middleware");
 const {
   generateAuthToken,
@@ -176,8 +179,8 @@ app.get(
 //       });
 //   }
 
-app.post("/send-email", (req, res) => {
-  const { username, topic, message } = req.body;
+app.post("/send-email", async (req, res) => {
+  const { username, topic, message, date } = req.body;
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const msg = {
     to: "support@victoryhistory.gg",
@@ -197,6 +200,27 @@ app.post("/send-email", (req, res) => {
       }
     }
   })();
+
+  let feedback = await Feedback.findOne({ twitchId: req.body.twitchId });
+
+  // If the user doesn't exist, create a new user
+  // if (!user) {
+    feedback = new Feedback({
+      twitchId: req.body.twitchId,
+      date: date,
+      topic: topic, 
+      message: message
+    });
+    // res.status(200).send({
+    //   twitchName: twitchUser.id,
+    //   twitchId: twitchUser.display_name,
+    //   games: twitchUser.games,
+    // });
+    await feedback.save();
+  // }
+
+
+
   // sendMail(username, topic, message);
 });
 
@@ -221,7 +245,8 @@ app.post("/send-report", (req, res) => {
       }
     }
   })();
-  sendMail(username, topic, message);
+  // sendMail(username, topic, message);
+  
 });
 
 let accessToken;
@@ -357,6 +382,16 @@ app.get("/games", async (req, res) => {
     });
   });
 });
+
+app.get("/feedback", (req, res) => {
+  Feedback.find({
+    twitchId: req.query.twitchId
+  }).then(response => {
+    res.json({
+      response
+    })
+  })
+})
 
 let newGame;
 app.post("/addgame", (req, res, next) => {
