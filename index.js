@@ -13,6 +13,7 @@ const axios = require("axios");
 
 const User = require("./models/userModel");
 const Feedback = require("./models/feedbackModel");
+const Report = require("./models/reportModel");
 
 const ensureAuthenticated = require("./middleware/auth.middleware");
 const {
@@ -224,8 +225,8 @@ app.post("/send-email", async (req, res) => {
   // sendMail(username, topic, message);
 });
 
-app.post("/send-report", (req, res) => {
-  const { user, issue, details } = req.body;
+app.post("/send-report", async (req, res) => {
+  const { user, issue, details, date } = req.body;
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const msg = {
     to: "support@victoryhistory.gg",
@@ -245,6 +246,24 @@ app.post("/send-report", (req, res) => {
       }
     }
   })();
+
+  let report = await Report.findOne({ twitchId: req.body.twitchId });
+
+  // If the user doesn't exist, create a new user
+  // if (!user) {
+    report = new Report({
+      twitchId: req.body.twitchId,
+      date: date,
+      user: user, 
+      issue: issue,
+      details: details
+    });
+    // res.status(200).send({
+    //   twitchName: twitchUser.id,
+    //   twitchId: twitchUser.display_name,
+    //   games: twitchUser.games,
+    // });
+    await report.save();
   // sendMail(username, topic, message);
   
 });
@@ -382,6 +401,16 @@ app.get("/games", async (req, res) => {
     });
   });
 });
+
+app.get("/report", (req, res) => {
+  Report.find({
+    twitchId: req.query.twitchId
+  }).then(response => {
+    res.json({
+      response
+    })
+  })
+})
 
 app.get("/feedback", (req, res) => {
   Feedback.find({
