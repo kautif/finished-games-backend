@@ -272,7 +272,7 @@ let accessToken;
 app.get("/auth/twitch/callback", async (req, res) => {
   try {
     const { code } = req.query;
-    console.log("twitch callback: ", req.body);
+    // console.log("twitch callback: ", req.body);
 
     const clientId = process.env.TWITCH_CLIENT_ID;
     const clientSecret = process.env.TWITCH_CLIENT_SECRET;
@@ -317,7 +317,7 @@ app.get("/auth/twitch/callback", async (req, res) => {
         });
 
         accessToken = response.data.access_token;
-        console.log("accessToken: ", accessToken);
+        // console.log("accessToken: ", accessToken);
 
         // Retry the request with the new access token
         userResponse = await axios.get("https://api.twitch.tv/helix/users", {
@@ -391,11 +391,11 @@ app.get(
 );
 
 app.get("/games", async (req, res) => {
-  console.log("/games: ", req.query.twitchName);
+  // console.log("/games: ", req.query.twitchName);
   User.findOne({
     twitchName: req.query.twitchName,
   }).then((response) => {
-    console.log("getting response: ", response);
+    // console.log("getting response: ", response);
     res.json({
       response,
     });
@@ -429,16 +429,17 @@ app.post("/addgame", (req, res, next) => {
     games: {
       $elemMatch: {
         name: req.body.games.name,
+        custom_game: req.body.games.custom_game
       },
     },
   })
     .then((gameFound) => {
-      if (gameFound.name === req.body.games.name) {
+      if (gameFound.name === req.body.games.name && gameFound.custom_game === req.body.games.custom_game) {
         console.log("user already has this game");
       } else {
         console.log("User will add this game");
         newGame = req.body.games;
-        console.log("newGame: ", req.body.games);
+        // console.log("newGame: ", req.body.games);
       }
     })
     .catch((err) => {
@@ -446,16 +447,17 @@ app.post("/addgame", (req, res, next) => {
       User.findOne({
         twitchId: req.body.twitchId,
       }).then((user) => {
-        console.log("/addgame user: ", user);
         user.games.push(req.body.games);
         user
           .save()
           .then((result) => {
+            console.log("adding new game: ", result);
             res.status(201).send({
               message: `Game named ${req.body.games.name} added to ${req.body.twitchName}`,
             });
           })
           .catch((err) => {
+            console.log("failed to add new game: ", err.message);
             res.status(500).send({
               message: `Failed to add game named ${req.body.games.name} to ${req.body.twitchName}`,
               err,
@@ -481,7 +483,7 @@ app.put("/updategame", (req, res) => {
     }
   )
     .then(() => {
-      console.log("document updated");
+      // console.log("document updated");
     })
     .catch((err) => {
       console.error("Error: ", err.message);
@@ -491,8 +493,8 @@ app.put("/updategame", (req, res) => {
 app.delete("/deletegame", (req, res) => {
   const { twitchName } = req.body;
   const { name } = req.body.games;
-  console.log("twitchName", twitchName);
-  console.log("game", name);
+  // console.log("twitchName", twitchName);
+  // console.log("game", name);
   User.updateOne(
     {
       twitchName: twitchName,
@@ -506,7 +508,7 @@ app.delete("/deletegame", (req, res) => {
     },
     (err, result) => {
       if (err) throw err;
-      console.log(result.modifiedCount + " game(s) deleted");
+      // console.log(result.modifiedCount + " game(s) deleted");
     }
   );
 });
@@ -517,33 +519,33 @@ app.delete("/deleteuser", (req, res) => {
     if (err) {
       throw err;
     } else {
-      console.log(`delete user ${twitchName}: `, result);
+      // console.log(`delete user ${twitchName}: `, result);
     }
   })
 })
 
 app.get("/api/user/", (req, res, next) => {
-  console.log("user: ", req.query.username);
+  // console.log("user: ", req.query.username);
   User.findOne({
     twitchName: req.query.username,
   })
     .then((userFound) => {
-      console.log("userFound: ", userFound);
+      // console.log("userFound: ", userFound);
       res.status(200).send({
         user: userFound,
       });
     })
     .catch((err) => {
-      console.log("user not found: ", err);
+      // console.log("user not found: ", err);
     });
 });
 
 app.post("/logout", async (req, res) => {
-  console.log("logging out");
+  // console.log("logging out");
   const token = req.headers["authorization"];
 
   if (!token) {
-    console.log("No token found");
+    // console.log("No token found");
     return res.status(400).send({ message: "No token found" });
   }
   try {
@@ -560,7 +562,7 @@ app.post("/logout", async (req, res) => {
       }
     );
   } catch (err) {
-    console.log("Error revoking token: ", err.message);
+    // console.log("Error revoking token: ", err.message);
     // return res.status(500).send({ message: 'Failed to revoke token' });
   }
 

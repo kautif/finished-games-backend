@@ -24,10 +24,12 @@ const UserSchema = new Schema({
     default: [],
     validate: {
       validator: function(games) {
-        const gameNames = games.map(game => game.name);
-        return new Set(gameNames).size === gameNames.length; // Ensure unique game names
+        const uniqueGames = new Set(
+          games.map(game => `${game.name}:${game.custom_game}`)
+        );
+        return uniqueGames.size === games.length; // Ensure uniqueness based on name and custom_game
       },
-      message: 'Game names must be unique'
+      message: 'Each game must have a unique combination of name and custom_game'
     }
   },
   tokens: [{type: Object}]
