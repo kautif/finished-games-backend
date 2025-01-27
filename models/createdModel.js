@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const CreatedSchema = new Schema({
-  twitch_name: String,
-  twitch_id: String,
-  date_created: Date
+  twitchName: String,
+  twitchId: String,
+  date_created: String
 });
 
 const Created = mongoose.model('Created', CreatedSchema);

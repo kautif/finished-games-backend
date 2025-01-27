@@ -10,10 +10,13 @@ const passport = require("passport");
 const app = express();
 const cors = require("cors");
 const axios = require("axios");
+const { toZonedTime, formatInTimeZone } = require('date-fns-tz');
 
 const User = require("./models/userModel");
 const Feedback = require("./models/feedbackModel");
 const Report = require("./models/reportModel");
+const Created = require("./models/createdModel");
+const Deleted = require("./models/deletedModel");
 
 const ensureAuthenticated = require("./middleware/auth.middleware");
 const {
@@ -268,6 +271,16 @@ app.post("/send-report", async (req, res) => {
   
 });
 
+const now = new Date;
+const month = now.getMonth() + 1;
+const day = now.getDate();
+const year = now.getFullYear();
+const hour = now.getHours() + 1;
+const minutes = now.getMinutes();
+const seconds = now.getSeconds();
+
+const fullDate = `${year}-${month}-${day}-T-${hour}:${minutes}:${seconds}`;
+
 let accessToken;
 app.get("/auth/twitch/callback", async (req, res) => {
   try {
@@ -336,7 +349,9 @@ app.get("/auth/twitch/callback", async (req, res) => {
     // Check if the user already exists in your database
     let user = await User.findOne({ twitchId: twitchUser.id });
 
+
     // If the user doesn't exist, create a new user
+
     if (!user) {
       user = new User({
         twitchId: twitchUser.id,
@@ -344,6 +359,15 @@ app.get("/auth/twitch/callback", async (req, res) => {
         profileImageUrl: twitchUser.profile_image_url,
         twitchName: twitchUser.display_name.toLowerCase()
       });
+
+      let created = new Created({
+        twitchId: twitchUser.id,
+        twitchName: twitchUser.display_name,
+        date_created: fullDate
+      })
+
+      await created.save();
+
       // res.status(200).send({
       //   twitchName: twitchUser.id,
       //   twitchId: twitchUser.display_name,
@@ -513,15 +537,24 @@ app.delete("/deletegame", (req, res) => {
   );
 });
 
-app.delete("/deleteuser", (req, res) => {
-  const { twitchName } = req.body;
-  User.deleteOne({ twitchName: twitchName}, (err, result) => {
+app.delete("/deleteuser", async (req, res) => {
+  const { twitchName, twitchId } = req.body;
+
+  User.deleteOne({ twitchName: twitchName.toLowerCase()}, (err, result) => {
     if (err) {
       throw err;
     } else {
       // console.log(`delete user ${twitchName}: `, result);
     }
   })
+
+  let deleted = new Deleted({
+    twitchId: twitchId,
+    twitchName: twitchName,
+    date_created: fullDate
+  })
+
+  await deleted.save();
 })
 
 app.get("/api/user/", (req, res, next) => {

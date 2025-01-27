@@ -2,9 +2,9 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const DeletedSchema = new Schema({
-  twitch_name: String,
-  twitch_id: String,
-  date_created: Date
+  twitchName: String,
+  twitchId: String,
+  date_created: String
 });
 
 const Deleted = mongoose.model('Deleted', DeletedSchema);
