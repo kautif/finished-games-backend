@@ -4,7 +4,7 @@ const Schema = mongoose.Schema;
 const DeletedSchema = new Schema({
   twitchName: String,
   twitchId: String,
-  date_created: String
+  date_deleted: String
 });
 
 const Deleted = mongoose.model('Deleted', DeletedSchema);

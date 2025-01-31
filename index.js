@@ -33,6 +33,36 @@ app.use(cookieParser());
 
 const dbConnect = require("./db/dbConnect");
 
+var recaptcha_async = require('recaptcha-async');
+var recaptcha = new recaptcha_async.reCaptcha();
+
+function validateRecaptcha(req, res, next) {
+  recaptcha.checkAnswer(
+    process.env.CAPTCHA_SECRET_KEY,
+    req.ip,
+    req.body.recaptcha_challenge_field,
+    req.body.recaptcha_response_field,
+    (err, res) => {
+      if (err || !res.is_valid) {
+        return res.status(400).json({ error: "Invalid reCAPTCHA" });
+      }
+      next(); // Proceed if valid
+    }
+  );
+}
+
+// recaptcha.on('data', function (res) {
+//   if(res.is_valid)
+//     html = "valid answer";
+//   else
+//     html = recaptcha.getCaptchaHtml(mypublickey, res.error);
+// });
+
+// recaptcha.checkAnswer(myprivatekey, 
+//                       req.connection.remoteAddress, 
+//                       req.body.recaptcha_challenge_field, 
+//                       req.body.recaptcha_response_field);
+
 var GoogleStrategy = require("passport-google-oauth2").Strategy;
 
 passport.use(
@@ -183,7 +213,7 @@ app.get(
 //       });
 //   }
 
-app.post("/send-email", async (req, res) => {
+app.post("/send-email", validateRecaptcha, async (req, res) => {
   const { username, topic, message, date } = req.body;
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const msg = {
@@ -228,7 +258,7 @@ app.post("/send-email", async (req, res) => {
   // sendMail(username, topic, message);
 });
 
-app.post("/send-report", async (req, res) => {
+app.post("/send-report", validateRecaptcha, async (req, res) => {
   const { user, issue, details, date } = req.body;
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const msg = {
@@ -551,7 +581,7 @@ app.delete("/deleteuser", async (req, res) => {
   let deleted = new Deleted({
     twitchId: twitchId,
     twitchName: twitchName,
-    date_created: fullDate
+    date_deleted: fullDate
   })
 
   await deleted.save();
