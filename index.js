@@ -42,8 +42,8 @@ function validateRecaptcha(req, res, next) {
     req.ip,
     req.body.recaptcha_challenge_field,
     req.body.recaptcha_response_field,
-    (err, res) => {
-      if (err || !res.is_valid) {
+    (err, captchaResponse) => {
+      if (err || !captchaResponse.is_valid) {
         return res.status(400).json({ error: "Invalid reCAPTCHA" });
       }
       next(); // Proceed if valid
@@ -84,6 +84,7 @@ passport.use(
 // app.use(cors())
 
 const allowedOrigins = [
+  "http://localhost:4000",
   "http://localhost:3000",
   "https://victorysaga.netlify.app",
   "https://victoryhistory.gg",
@@ -213,7 +214,8 @@ app.get(
 //       });
 //   }
 
-app.post("/send-email", validateRecaptcha, async (req, res) => {
+app.post("/send-email", async (req, res) => {
+  console.log("feedback req");
   const { username, topic, message, date } = req.body;
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const msg = {
@@ -258,7 +260,7 @@ app.post("/send-email", validateRecaptcha, async (req, res) => {
   // sendMail(username, topic, message);
 });
 
-app.post("/send-report", validateRecaptcha, async (req, res) => {
+app.post("/send-report", async (req, res) => {
   const { user, issue, details, date } = req.body;
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
   const msg = {
