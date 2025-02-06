@@ -182,38 +182,6 @@ app.get(
   passport.authenticate("google", { scope: ["email", "profile"] })
 );
 
-//   async function sendMail(username, topic, message) {
-//     const transporter = nodemailer.createTransport({
-//         host: process.env.FORM_HOST,
-//         secure: true,
-//         secureConnection: false, // TLS requires secureConnection to be false
-//         tls: {
-//             ciphers:'SSLv3'
-//         },
-//         requireTLS:true,
-//         port: 465,
-//         debug: true,
-//         auth: {
-//             user: process.env.FORM_USER,
-//             pass: process.env.FORM_PW
-//         }
-//     });
-
-//       const mailOptions = {
-//         from: 'support@victoryhistory.gg',
-//         to: 'support@victoryhistory.gg',
-//         subject: `FEEDBACK from ${username}`,
-//         text: `user: ${username} \n topic: ${topic} \n message: ${message}`
-//       };
-//       transporter.sendMail(mailOptions, function (err, info) {
-//         if (err) {
-//           console.log(err);
-//         } else {
-//           console.log('Email sent: ' + info.response);
-//         }
-//       });
-//   }
-
 app.post("/send-email", async (req, res) => {
   console.log("feedback req");
   const { username, topic, message, date } = req.body;
