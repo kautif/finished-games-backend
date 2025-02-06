@@ -12,19 +12,19 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
-    - name: Deploy to Droplet
-      env:
-        GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
-        DO_SERVER_IP: ${{ secrets.DO_SERVER_IP }}
-        DO_SERVER_PASSWORD: ${{ secrets.DO_SERVER_PASSWORD }}
+
+    - name: Set up SSH
       run: |
-        sudo apt-get update
-        sudo apt-get install -y sshpass
-        sshpass -p $DO_SERVER_PASSWORD ssh -o StrictHostKeyChecking=no root@$DO_SERVER_IP << 'EOF'
-          cd dev/finished-games/finished-games-backend
-          git pull https://$GITHUB_PAT@github.com/kautif/finished-games-backend.git main
-          npm install
-          pm2 stop all
-          pm2 delete all
-          pm2 start npm --name "finished-games-backend" -- run start
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        ssh-keyscan -H ${{ secrets.DO_SERVER_IP }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to DigitalOcean
+      run: |
+        ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no root@${{ secrets.DO_SERVER_IP }} << 'EOF'
+          cd /root/dev/finished-games/finished-games-backend
+          git pull origin main
+          npm install --omit=dev
+          pm2 restart finished-games-backend || pm2 start npm --name "finished-games-backend" -- run start
         EOF
