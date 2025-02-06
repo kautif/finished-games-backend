@@ -182,8 +182,6 @@ app.get(
   passport.authenticate("google", { scope: ["email", "profile"] })
 );
 
-
-// deploy to droplet
 app.post("/send-email", async (req, res) => {
   console.log("feedback req");
   const { username, topic, message, date } = req.body;
