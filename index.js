@@ -172,17 +172,21 @@ app.get("/protected/userid", ensureAuthenticated, async (req, res) => {
 
 app.get("/getusers", async (req, res) => {
   const users = await User.find({ twitchName: { $regex: req.query.user } });
-  const page = req.query.page;
+  const page = parseInt(req.query.page) || 1;
+  let limit = 10;
   const userArr = [];
 
-  let endIndex = page * 9;
-  let startIndex = endIndex - 9;
+  let endIndex = page * 9 < users.length ? page * 9 : users.length;
+  // let startIndex = page * 9 - 9;
+  let startIndex = (page - 1) * limit;
+  let paginatedUsers = users.slice(startIndex, startIndex + limit);
   console.log("users: ", users);
   console.log("page: ", page);
   console.log("endIndex: ", endIndex);
   console.log("startIndex: ", startIndex);
+  console.log("paginatedUsers: ", paginatedUsers.length);
   res.status(200).send({
-    users: users,
+    users: paginatedUsers,
   });
 });
 
