@@ -439,6 +439,62 @@ app.get("/games", async (req, res) => {
   });
 });
 
+app.get("/filter", async (req, res) => {
+  // console.log("/games: ", req.query.twitchName);
+  let search = req.query.search; 
+  let rank = req.query.rank;
+  let gameType = req.query.gameType;
+  let sortFocus = req.query.sortFocus;
+  let sortDirection = req.query.sortDirection;
+ 
+  let games = [];
+
+  User.findOne({
+    twitchName: req.query.twitchName,
+  }).then((response) => {
+    // console.log("getting response: ", response);
+    response.games.map(game => {
+      if (game.name.toLowerCase().includes(search.toLowerCase())) {
+          games.push(game);
+      }
+    })
+
+    let filteredStates = games.filter(game => game.rank === rank);
+
+    if (rank === 'all') {
+      filteredStates = games;
+    }
+
+    let filteredTypes = filteredStates.filter(game => game.custom_game === gameType);
+
+    if (gameType === 'custom') {
+      filteredTypes = filteredStates.filter(game => game.custom_game === 'mario' || game.custom_game === 'pokemon' || game.custom_game === 'other' || game.custom_game === 'minecraft');
+    }
+
+    if (sortDirection === 'ascending') {
+      if (sortFocus === 'alpha') {
+        console.log('ascending alpha');
+      } else if ('rating') {
+        console.log('ascending rating');
+      } else {
+        console.log('ascending date');
+      }
+    } else {
+      if (sortFocus === 'alpha') {
+        console.log('descending alpha');
+      } else if ('rating') {
+        console.log('descending rating');
+      } else {
+        console.log('descending date');
+      }
+    }
+
+    res.json({
+      games,
+    });
+  });
+});
+
 app.get("/report", (req, res) => {
   Report.find({
     twitchId: req.query.twitchId
