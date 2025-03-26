@@ -447,6 +447,8 @@ app.get("/filter", async (req, res) => {
   let sortFocus = req.query.sortFocus;
   let sortDirection = req.query.sortDirection;
  
+  console.log("sortFocus:", sortFocus);
+
   let games = [];
 
   User.findOne({
@@ -471,21 +473,29 @@ app.get("/filter", async (req, res) => {
       filteredTypes = filteredStates.filter(game => game.custom_game === 'mario' || game.custom_game === 'pokemon' || game.custom_game === 'other' || game.custom_game === 'minecraft');
     }
 
+    if (gameType === 'all') {
+      filteredTypes = filteredStates;
+    }
+
+    let sortedArr;
+
     if (sortDirection === 'ascending') {
+      console.log("ascending conditional");
       if (sortFocus === 'alpha') {
-        console.log('ascending alpha');
-      } else if ('rating') {
-        console.log('ascending rating');
-      } else {
-        console.log('ascending date');
+        sortedArr = filteredTypes.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
+      } else if (sortFocus === 'rating') {
+        sortedArr = filteredTypes.sort((a,b) => (a.rating > b.rating) ? 1 : ((b.rating > a.rating) ? -1 : 0));
+      } else if ( sortFocus === 'date') {
+        console.log("date conditional");
+        sortedArr = filteredTypes.sort((a,b) => (a.date_added > b.date_added) ? 1 : ((b.date_added > a.date_added) ? -1 : 0));
       }
     } else {
       if (sortFocus === 'alpha') {
-        console.log('descending alpha');
-      } else if ('rating') {
-        console.log('descending rating');
-      } else {
-        console.log('descending date');
+        sortedArr = filteredTypes.sort((a,b) => (a.name < b.name) ? 1 : ((a.name > b.name) ? -1 : 0))
+      } else if (sortFocus === 'rating') {
+        sortedArr = filteredTypes.sort((a,b) => (a.rating < b.rating) ? 1 : ((a.rating > b.rating) ? -1 : 0));
+      } else if (sortFocus === 'date') {
+        sortedArr = filteredTypes.sort((a,b) => (a.date_added < b.date_added) ? 1 : ((a.date_added > b.date_added) ? -1 : 0));
       }
     }
 
