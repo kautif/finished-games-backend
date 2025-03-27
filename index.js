@@ -177,14 +177,8 @@ app.get("/getusers", async (req, res) => {
   const userArr = [];
 
   let endIndex = page * 9 < users.length ? page * 9 : users.length;
-  // let startIndex = page * 9 - 9;
   let startIndex = (page - 1) * limit;
   let paginatedUsers = users.slice(startIndex, startIndex + limit);
-  console.log("users: ", users);
-  console.log("page: ", page);
-  console.log("endIndex: ", endIndex);
-  console.log("startIndex: ", startIndex);
-  console.log("paginatedUsers: ", paginatedUsers.length);
   res.status(200).send({
     users: paginatedUsers,
   });
@@ -442,12 +436,15 @@ app.get("/games", async (req, res) => {
 app.get("/filter", async (req, res) => {
   // console.log("/games: ", req.query.twitchName);
   let search = req.query.search; 
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = 10;
   let rank = req.query.rank;
   let gameType = req.query.gameType;
   let sortFocus = req.query.sortFocus;
   let sortDirection = req.query.sortDirection;
  
-  console.log("sortFocus:", sortFocus);
+  console.log("page:", page);
 
   let games = [];
 
@@ -498,6 +495,12 @@ app.get("/filter", async (req, res) => {
         sortedArr = filteredTypes.sort((a,b) => (a.date_added < b.date_added) ? 1 : ((a.date_added > b.date_added) ? -1 : 0));
       }
     }
+
+    let endIndex = page * 9 < sortedArr.length ? page * 9 : sortedArr.length;
+    let startIndex = (page - 1) * limit;
+    let paginatedGames = sortedArr.slice(startIndex, startIndex + limit);
+
+    console.log(paginatedGames);
 
     res.json({
       games,
