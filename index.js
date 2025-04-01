@@ -443,68 +443,68 @@ app.get("/filter", async (req, res) => {
   let gameType = req.query.gameType;
   let sortFocus = req.query.sortFocus;
   let sortDirection = req.query.sortDirection;
- 
-  console.log("page:", page);
 
   let games = [];
 
   User.findOne({
     twitchName: req.query.twitchName,
   }).then((response) => {
-    // console.log("getting response: ", response);
-    response.games.map(game => {
-      if (game.name.toLowerCase().includes(search.toLowerCase())) {
-          games.push(game);
+    if (response !== null) {
+      console.log("getting response: ", response);
+      response.games.map(game => {
+        if (game.name.toLowerCase().includes(search.toLowerCase())) {
+            games.push(game);
+        }
+      })
+  
+      let filteredStates = games.filter(game => game.rank === rank);
+      console.log("backend games: ", Math.ceil(1 / 10));
+      if (rank === 'all') {
+        filteredStates = games;
       }
-    })
-
-    let filteredStates = games.filter(game => game.rank === rank);
-
-    if (rank === 'all') {
-      filteredStates = games;
-    }
-
-    let filteredTypes = filteredStates.filter(game => game.custom_game === gameType);
-
-    if (gameType === 'custom') {
-      filteredTypes = filteredStates.filter(game => game.custom_game === 'mario' || game.custom_game === 'pokemon' || game.custom_game === 'other' || game.custom_game === 'minecraft');
-    }
-
-    if (gameType === 'all') {
-      filteredTypes = filteredStates;
-    }
-
-    let sortedArr;
-
-    if (sortDirection === 'ascending') {
-      console.log("ascending conditional");
-      if (sortFocus === 'alpha') {
-        sortedArr = filteredTypes.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
-      } else if (sortFocus === 'rating') {
-        sortedArr = filteredTypes.sort((a,b) => (a.rating > b.rating) ? 1 : ((b.rating > a.rating) ? -1 : 0));
-      } else if ( sortFocus === 'date') {
-        console.log("date conditional");
-        sortedArr = filteredTypes.sort((a,b) => (a.date_added > b.date_added) ? 1 : ((b.date_added > a.date_added) ? -1 : 0));
+  
+      let filteredTypes = filteredStates.filter(game => game.custom_game === gameType);
+  
+      if (gameType === 'custom') {
+        filteredTypes = filteredStates.filter(game => game.custom_game === 'mario' || game.custom_game === 'pokemon' || game.custom_game === 'other' || game.custom_game === 'minecraft');
       }
-    } else {
-      if (sortFocus === 'alpha') {
-        sortedArr = filteredTypes.sort((a,b) => (a.name < b.name) ? 1 : ((a.name > b.name) ? -1 : 0))
-      } else if (sortFocus === 'rating') {
-        sortedArr = filteredTypes.sort((a,b) => (a.rating < b.rating) ? 1 : ((a.rating > b.rating) ? -1 : 0));
-      } else if (sortFocus === 'date') {
-        sortedArr = filteredTypes.sort((a,b) => (a.date_added < b.date_added) ? 1 : ((a.date_added > b.date_added) ? -1 : 0));
+  
+      if (gameType === 'all') {
+        filteredTypes = filteredStates;
       }
+  
+      let sortedArr;
+  
+      if (sortDirection === 'ascending') {
+        // console.log("ascending conditional");
+        if (sortFocus === 'alpha') {
+          sortedArr = filteredTypes.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
+        } else if (sortFocus === 'rating') {
+          sortedArr = filteredTypes.sort((a,b) => (a.rating > b.rating) ? 1 : ((b.rating > a.rating) ? -1 : 0));
+        } else if ( sortFocus === 'date') {
+          // console.log("date conditional");
+          sortedArr = filteredTypes.sort((a,b) => (a.date_added > b.date_added) ? 1 : ((b.date_added > a.date_added) ? -1 : 0));
+        }
+      } else {
+        if (sortFocus === 'alpha') {
+          sortedArr = filteredTypes.sort((a,b) => (a.name < b.name) ? 1 : ((a.name > b.name) ? -1 : 0))
+        } else if (sortFocus === 'rating') {
+          sortedArr = filteredTypes.sort((a,b) => (a.rating < b.rating) ? 1 : ((a.rating > b.rating) ? -1 : 0));
+        } else if (sortFocus === 'date') {
+          sortedArr = filteredTypes.sort((a,b) => (a.date_added < b.date_added) ? 1 : ((a.date_added > b.date_added) ? -1 : 0));
+        }
+      }
+  
+      let endIndex = page * 9 < sortedArr.length ? page * 9 : sortedArr.length;
+      let startIndex = (page - 1) * limit;
+      let paginatedGames = sortedArr.slice(startIndex, startIndex + limit);
+  
+      // console.log(paginatedGames);
+  
+      res.json({
+        paginatedGames,
+      });
     }
-
-    let endIndex = page * 9 < sortedArr.length ? page * 9 : sortedArr.length;
-    let startIndex = (page - 1) * limit;
-    let paginatedGames = sortedArr.slice(startIndex, startIndex + limit);
-
-    console.log(paginatedGames);
-
-    res.json({
-      games,
-    });
   });
 });
 
