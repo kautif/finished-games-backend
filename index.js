@@ -450,7 +450,6 @@ app.get("/filter", async (req, res) => {
     twitchName: req.query.twitchName,
   }).then((response) => {
     if (response !== null) {
-      console.log("getting response: ", response);
       response.games.map(game => {
         if (game.name.toLowerCase().includes(search.toLowerCase())) {
             games.push(game);
@@ -458,7 +457,6 @@ app.get("/filter", async (req, res) => {
       })
   
       let filteredStates = games.filter(game => game.rank === rank);
-      console.log("backend games: ", Math.ceil(1 / 10));
       if (rank === 'all') {
         filteredStates = games;
       }
@@ -472,6 +470,9 @@ app.get("/filter", async (req, res) => {
       if (gameType === 'all') {
         filteredTypes = filteredStates;
       }
+
+      console.log("filteredTypes: ", filteredTypes.length);
+      console.log("backend pages: ", Math.ceil(filteredTypes.length / 10));
   
       let sortedArr;
   
@@ -503,6 +504,7 @@ app.get("/filter", async (req, res) => {
   
       res.json({
         paginatedGames,
+        lastPage: Math.ceil(filteredTypes.length / 10)
       });
     }
   });
