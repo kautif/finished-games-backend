@@ -181,6 +181,7 @@ app.get("/getusers", async (req, res) => {
   let paginatedUsers = users.slice(startIndex, startIndex + limit);
   res.status(200).send({
     users: paginatedUsers,
+    lastPage: Math.ceil(users.length / 10)
   });
 });
 
@@ -438,7 +439,7 @@ app.get("/filter", async (req, res) => {
   let search = req.query.search; 
 
   const page = parseInt(req.query.page) || 1;
-  const limit = 10;
+  const limit = 12;
   let rank = req.query.rank;
   let gameType = req.query.gameType;
   let sortFocus = req.query.sortFocus;
