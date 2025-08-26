@@ -499,13 +499,14 @@ app.get("/filter", async (req, res) => {
   
       let endIndex = page * 9 < sortedArr.length ? page * 9 : sortedArr.length;
       let startIndex = (page - 1) * limit;
+      
       let paginatedGames = sortedArr.slice(startIndex, startIndex + limit);
   
       // console.log(paginatedGames);
   
       res.json({
         paginatedGames,
-        lastPage: Math.ceil(filteredTypes.length / 10)
+        lastPage: Math.ceil(filteredTypes.length / 12)
       });
     }
   });
