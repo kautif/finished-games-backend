@@ -465,7 +465,9 @@ app.get("/filter", async (req, res) => {
       let filteredTypes = filteredStates.filter(game => game.custom_game === gameType);
   
       if (gameType === 'custom') {
-        filteredTypes = filteredStates.filter(game => game.custom_game === 'mario' || game.custom_game === 'pokemon' || game.custom_game === 'other' || game.custom_game === 'minecraft');
+        filteredTypes = filteredStates.filter(game => game.custom_game === 'romhacks' || 
+          // game.custom_game === 'pokemon' || 
+          game.custom_game === 'other' || game.custom_game === 'mods');
       }
   
       if (gameType === 'all') {
