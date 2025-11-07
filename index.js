@@ -1,14 +1,18 @@
+const { webcrypto } = require('crypto');
+globalThis.crypto = webcrypto;
+
 const http = require("http");
 const fetch = require("node-fetch");
 const nodemailer = require("nodemailer");
 const sgMail = require("@sendgrid/mail");
 
 const { google } = require("googleapis");
-
+const jwt = require('jsonwebtoken');
 const express = require("express");
 const passport = require("passport");
 const app = express();
 const cors = require("cors");
+const bcrypt = require('bcrypt');
 const axios = require("axios");
 const { toZonedTime, formatInTimeZone } = require('date-fns-tz');
 
@@ -31,9 +35,14 @@ const querystring = require("querystring");
 app.use(express.json());
 app.use(cookieParser());
 
+let publicKey, privateKey;
+
 const dbConnect = require("./db/dbConnect");
 
+const JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
+
 var recaptcha_async = require('recaptcha-async');
+const { secretmanager } = require("googleapis/build/src/apis/secretmanager");
 var recaptcha = new recaptcha_async.reCaptcha();
 
 function validateRecaptcha(req, res, next) {
@@ -143,13 +152,19 @@ const normalizePort = (val) => {
 
 const port = normalizePort(process.env.PORT || "4000");
 
-app.listen(port, () => {
-  console.log("Server is running on port 4000");
-});
-
 app.get("/protected/userid", ensureAuthenticated, async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.userId }, "twitchName");
+    // const user = await User.findOne({ _id: req.userId }, "twitchName");
+    const pwUser = await User.findOne({
+      _id: req.userId,
+      username: {$exists: true}
+    });
+    const twitchUser = await User.findOne({
+      _id: req.userId,
+      twitchName: {$exists: true}
+    });
+
+    const user = twitchUser || pwUser;
     const twitchId = await User.findOne({ _id: req.userId }, "twitchId");
     const games = await User.findOne({ _id: req.userId }, "games");
     console.log("req.userId: ", req.userId);
@@ -158,7 +173,8 @@ app.get("/protected/userid", ensureAuthenticated, async (req, res) => {
     }
 
     res.status(200).send({
-      message: "Hi, " + user.twitchName,
+      message: "Hi, " + (user.twitchName || user.username),
+      username: user.username,
       twitchName: user.twitchName,
       twitchId: twitchId.twitchId,
       games: games.games,
@@ -646,7 +662,7 @@ app.delete("/deleteuser", async (req, res) => {
 })
 
 app.get("/api/user/", (req, res, next) => {
-  // console.log("user: ", req.query.username);
+  // console.log("user: ", req);
   User.findOne({
     twitchName: req.query.username,
   })
@@ -657,54 +673,194 @@ app.get("/api/user/", (req, res, next) => {
       });
     })
     .catch((err) => {
-      // console.log("user not found: ", err);
+      console.log("user not found: ", err);
     });
 });
 
-app.post("/logout", async (req, res) => {
-  // console.log("logging out");
-  const token = req.headers["authorization"];
+app.get("/api/jwt/", (req, res, next) => {
+  User.findOne({
+    username: req.body.username
+  }).then((userFound) => {
+    res.status(200).send({
+      user: userFound
+    })
+  }).catch(err => {
+    console.error(err.message);
+  })
+})
 
-  if (!token) {
-    // console.log("No token found");
-    return res.status(400).send({ message: "No token found" });
-  }
+app.post('/register', async (req, res) => {
   try {
-    await axios.post(
-      "https://id.twitch.tv/oauth2/revoke",
-      querystring.stringify({
-        client_id: process.env.TWITCH_CLIENT_ID,
-        token: token,
-      }),
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-      }
-    );
-  } catch (err) {
-    // console.log("Error revoking token: ", err.message);
-    // return res.status(500).send({ message: 'Failed to revoke token' });
+    const { username, password, email} = req.body;
+
+    if (!username || !password || !email) {
+      return res.status(400).json({message: "Username, password, and email required"});
+    }
+
+    // Check if username already exists
+    const existingUsername = await User.findOne({username});
+    if (existingUsername) {
+      return res.status(400).json({message: "Username already exists"});
+    }
+
+    // Check if email already exists
+    const existingEmail = await User.findOne({email});
+    if (existingEmail) {
+      return res.status(400).json({message: "Email already exists"});
+    }
+
+    const hashedPw = await bcrypt.hash(password, 10);
+    
+    const user = new User({
+      username, 
+      password: hashedPw, 
+      email,
+      games: []
+    });
+    await user.save();
+
+    // Generate both access and refresh tokens
+    const token = generateAuthToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Store tokens in user document
+    await User.findByIdAndUpdate(user._id, {
+      tokens: [{ token, signedAt: Date.now().toString() }],
+    });
+
+    return res.json({
+      message: "Account created successfully", 
+      token,
+      refreshToken,
+      username: user.username,
+      userId: user._id
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    
+    // Handle MongoDB duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({
+        message: `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`
+      });
+    }
+    
+    res.status(500).json({message: "Server error"});
   }
+})
 
-  // const authHeader = `Basic ${Buffer.from(`${process.env.TWITCH_CLIENT_ID}:${process.env.CLIENT_SECRET}`).toString('base64')}`;
-  // response = await fetch('https://id.twitch.tv/oauth2/revoke', {
-  //     method: "POST",
-  //     headers: {
-  //         'Authorization': authHeader,
-  //         'Content-Type': "application/x-www-form-urlencoded",
-  //     },
-  //     body:  new URLSearchParams({
-  //         client_id: process.env.TWITCH_CLIENT_ID,
-  //         token: req.body.accessToken
-  //       })
-  // })
+app.post("/login", async(req, res) => {
+  try {
+    const {username, password} = req.body;
 
-  res.status(200).send({ message: "Logged out successfully" });
-  return res;
+    if (!username || !password) {
+      return res.status(400).json({message: "Username and password required"});
+    }
+
+    const user = await User.findOne({username});
+    if (!user || !user.password) {
+      return res.status(401).json({message: "Invalid credentials"});
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return res.status(401).json({message: "Invalid credentials"});
+    }
+
+    // Generate both access and refresh tokens
+    const token = generateAuthToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Store tokens in user document
+    let oldTokens = user.tokens || [];
+    if (oldTokens.length) {
+      oldTokens = oldTokens.filter((t) => {
+        const timeDiff = (Date.now() - parseInt(t.signedAt)) / 1000;
+        if (timeDiff < 86400) {
+          return t;
+        }
+      });
+    }
+
+    await User.findByIdAndUpdate(user._id, {
+      tokens: [...oldTokens, { token, signedAt: Date.now().toString() }],
+    });
+
+    res.json({
+      message: "Login successful",
+      token,
+      refreshToken,
+      username: user.username,
+      userId: user._id
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({message: "Server error"});
+  }
+})
+
+app.post("/logout", async (req, res) => {
+  try {
+    const authToken = req.headers["authorization"];
+    const twitchToken = req.body?.twitchToken; // Optional: sent from frontend if available
+
+    if (!authToken) {
+      return res.status(400).send({ message: "No token provided" });
+    }
+
+    // 1. Invalidate JWT token by removing from user's tokens array
+    try {
+      const decoded = jwt.verify(authToken, process.env.JWT_SECRET);
+      
+      if (decoded.userId) {
+        // Remove this specific token from the user's tokens array
+        await User.findByIdAndUpdate(decoded.userId, {
+          $pull: { tokens: { token: authToken } }
+        });
+        console.log(`JWT token invalidated for user: ${decoded.userId}`);
+      }
+    } catch (jwtError) {
+      console.log("JWT verification failed during logout (token may already be invalid):", jwtError.message);
+      // Continue with logout process even if JWT verification fails
+    }
+
+    // 2. Revoke Twitch token if provided (for Twitch OAuth users)
+    if (twitchToken) {
+      try {
+        await axios.post(
+          "https://id.twitch.tv/oauth2/revoke",
+          querystring.stringify({
+            client_id: process.env.TWITCH_CLIENT_ID,
+            token: twitchToken,
+          }),
+          {
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+          }
+        );
+        console.log("Twitch token revoked successfully");
+      } catch (twitchError) {
+        console.log("Twitch token revocation failed:", twitchError.message);
+        // Don't fail logout if Twitch revocation fails
+      }
+    }
+
+    res.status(200).send({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error("Logout error:", error);
+    res.status(500).send({ message: "Logout failed" });
+  }
 });
 
 // Route for token generation (login simulation)
 app.get("/validated-auth-token", ensureAuthenticated, (req, res) => {
   return res.status(200).json("Auth Token is Valid");
+});
+
+app.listen(port, () => {
+  console.log("Server is running on port 4000");
+  console.log("public key", publicKey);
+  console.log("private key:", privateKey)
 });
