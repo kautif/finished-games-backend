@@ -16,6 +16,7 @@ const GameSchema = new Schema({
 
 const UserSchema = new Schema({
   username: String,
+  username_default: String,
   password: String,
   email: String,
   twitchId: String,

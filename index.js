@@ -439,15 +439,38 @@ app.get(
 );
 
 app.get("/games", async (req, res) => {
-  // console.log("/games: ", req.query.twitchName);
-  User.findOne({
-    twitchName: req.query.twitchName,
-  }).then((response) => {
-    // console.log("getting response: ", response);
-    res.json({
-      response,
-    });
-  });
+  console.log("/games: ", req.query.twitchName);
+  const { twitchName, username} = req.query;
+
+  let gamesUser;
+  console.log("twitchName: ", twitchName);
+  console.log("username: ", username);
+  try {
+    if (twitchName !== null) {
+      gamesUser = await User.findOne({ twitchName });
+      console.log("twitch gamesUser: ", gamesUser);
+    } 
+    
+    if (username) {
+      gamesUser = await User.findOne({ username });
+
+      // await User.findOne({
+      //   twitchName: req.query.twitchName,
+      // }).then((response) => {
+      //   // console.log("getting response: ", response);
+      //   res.json({
+      //     response,
+      //   });
+      // });
+    } else {
+      return res.status(400).json({error: "No identifier provided"});
+    }
+    console.log("/games user: ", gamesUser);
+    res.json({response: gamesUser});
+  } catch (err) {
+    console.error("Error fetching user: ", err);
+    res.status(500).json({error: "Internal server error"});
+  }
 });
 
 app.get("/filter", async (req, res) => {
@@ -551,48 +574,84 @@ app.get("/feedback", (req, res) => {
 })
 
 let newGame;
-app.post("/addgame", (req, res, next) => {
-  User.findOne({
-    twitchName: req.body.twitchName,
-    games: {
-      $elemMatch: {
-        name: req.body.games.name,
-        custom_game: req.body.games.custom_game
-      },
-    },
-  })
-    .then((gameFound) => {
-      if (gameFound.name === req.body.games.name && gameFound.custom_game === req.body.games.custom_game) {
-        console.log("user already has this game");
-      } else {
-        console.log("User will add this game");
-        newGame = req.body.games;
-        // console.log("newGame: ", req.body.games);
-      }
-    })
-    .catch((err) => {
-      console.log("psuedo Error: User doesn't have game. Adding it");
-      User.findOne({
-        twitchId: req.body.twitchId,
-      }).then((user) => {
-        user.games.push(req.body.games);
-        user
-          .save()
-          .then((result) => {
-            console.log("adding new game: ", result);
-            res.status(201).send({
-              message: `Game named ${req.body.games.name} added to ${req.body.twitchName}`,
-            });
-          })
-          .catch((err) => {
-            console.log("failed to add new game: ", err.message);
-            res.status(500).send({
-              message: `Failed to add game named ${req.body.games.name} to ${req.body.twitchName}`,
-              err,
-            });
-          });
+app.post("/addgame", async (req, res, next) => {
+  try {
+    const {twitchName, username} = req.query;
+    const query = twitchName ? { twitchName } : {username };
+
+    const user = await User.findOne(query);
+
+    console.log("addGame user: ", user);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const existingGame = user.games.find(
+      (g) => g.name === games.name && g.custom_game === games.custom_game
+    );
+
+    if (existingGame) {
+      return res.status(200).json({
+        message: "User already has this game",
       });
+    } 
+
+    user.games.push(games);
+    await user.save();
+
+    res.status(201).json({
+      message: `Game named ${games.name} added to ${user.twitchName || user.username}`,
     });
+  } catch (err) {
+    console.error("Error adding game: ", err);
+    res.status(500).json({
+      message: "Failed to add game",
+      error: err.message
+    })
+  }
+
+  // User.findOne({
+  //   twitchName: req.body.twitchName,
+  //   games: {
+  //     $elemMatch: {
+  //       name: req.body.games.name,
+  //       custom_game: req.body.games.custom_game
+  //     },
+  //   },
+  // })
+  //   .then((gameFound) => {
+  //     if (gameFound.name === req.body.games.name && gameFound.custom_game === req.body.games.custom_game) {
+  //       console.log("user already has this game");
+  //     } else {
+  //       console.log("User will add this game");
+  //       newGame = req.body.games;
+  //       // console.log("newGame: ", req.body.games);
+  //     }
+  //   })
+  //   .catch((err) => {
+  //     console.log("psuedo Error: User doesn't have game. Adding it");
+  //     User.findOne({
+  //       twitchId: req.body.twitchId,
+  //     }).then((user) => {
+  //       user.games.push(req.body.games);
+  //       user
+  //         .save()
+  //         .then((result) => {
+  //           console.log("adding new game: ", result);
+  //           res.status(201).send({
+  //             message: `Game named ${req.body.games.name} added to ${req.body.twitchName}`,
+  //           });
+  //         })
+  //         .catch((err) => {
+  //           console.log("failed to add new game: ", err.message);
+  //           res.status(500).send({
+  //             message: `Failed to add game named ${req.body.games.name} to ${req.body.twitchName}`,
+  //             err,
+  //           });
+  //         });
+  //     });
+  //   });
 });
 
 app.put("/updategame", (req, res) => {
@@ -661,19 +720,25 @@ app.delete("/deleteuser", async (req, res) => {
   await deleted.save();
 })
 
-app.get("/api/user/", (req, res, next) => {
-  // console.log("user: ", req);
-  User.findOne({
-    twitchName: req.query.username,
-  })
-    .then((userFound) => {
-      // console.log("userFound: ", userFound);
-      res.status(200).send({
-        user: userFound,
-      });
+app.get("/api/user", (req, res) => {
+  User.findOne({ twitchName: req.query.username })
+    .then(user => {
+      if (user) return user;
+      // if not found, check username
+      return User.findOne({ username: req.query.username });
     })
-    .catch((err) => {
-      console.log("user not found: ", err);
+    .then(userFound => {
+      if (userFound) {
+        console.log("userFound:", userFound);
+        res.status(200).send({ user: userFound });
+      } else {
+        console.log("No user found");
+        res.status(404).send({ message: "User not found" });
+      }
+    })
+    .catch(err => {
+      console.error("Error finding user:", err);
+      res.status(500).send({ message: "Server error" });
     });
 });
 
@@ -691,14 +756,14 @@ app.get("/api/jwt/", (req, res, next) => {
 
 app.post('/register', async (req, res) => {
   try {
-    const { username, password, email} = req.body;
+    const { username_default, password, email} = req.body;
 
-    if (!username || !password || !email) {
+    if (!username_default || !password || !email) {
       return res.status(400).json({message: "Username, password, and email required"});
     }
 
     // Check if username already exists
-    const existingUsername = await User.findOne({username});
+    const existingUsername = await User.findOne({username_default});
     if (existingUsername) {
       return res.status(400).json({message: "Username already exists"});
     }
@@ -712,7 +777,8 @@ app.post('/register', async (req, res) => {
     const hashedPw = await bcrypt.hash(password, 10);
     
     const user = new User({
-      username, 
+      username_default,
+      username: username_default.toLowerCase(),
       password: hashedPw, 
       email,
       games: []
@@ -752,13 +818,14 @@ app.post('/register', async (req, res) => {
 
 app.post("/login", async(req, res) => {
   try {
+    console.log("body: ", req.body);
     const {username, password} = req.body;
 
     if (!username || !password) {
       return res.status(400).json({message: "Username and password required"});
     }
 
-    const user = await User.findOne({username});
+    const user = await User.findOne({username: username.toLowerCase()});
     if (!user || !user.password) {
       return res.status(401).json({message: "Invalid credentials"});
     }
@@ -801,8 +868,10 @@ app.post("/login", async(req, res) => {
 })
 
 app.post("/logout", async (req, res) => {
+  console.log("logging out");
   try {
     const authToken = req.headers["authorization"];
+    console.log("backend authToken: ", authToken);
     const twitchToken = req.body?.twitchToken; // Optional: sent from frontend if available
 
     if (!authToken) {
