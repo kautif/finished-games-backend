@@ -331,10 +331,6 @@ app.get("/auth/twitch/callback", async (req, res) => {
     const responseData = await response.data;
 
     accessToken = responseData.access_token;
-    // res.cookie("accessToken", accessToken)
-    // res.cookie('auth_token', token, { httpOnly: true, sameSite: 'none', secure: true });
-
-    // Call the Twitch API to get the user's information
     let userResponse;
     try {
       userResponse = await axios.get("https://api.twitch.tv/helix/users", {
@@ -587,6 +583,7 @@ app.post("/addgame", async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    console.log("checking for existing game");
     const existingGame = user.games.find(
       (g) => g.name === games.name && g.custom_game === games.custom_game
     );
@@ -597,7 +594,9 @@ app.post("/addgame", async (req, res, next) => {
       });
     } 
 
+    console.log("adding game");
     user.games.push(games);
+    console.log("saving game");
     await user.save();
 
     res.status(201).json({
@@ -909,6 +908,17 @@ app.post("/logout", async (req, res) => {
             },
           }
         );
+
+        await User.findOneAndUpdate(
+          { tokens: twitchToken },
+          { 
+            $unset: {
+              twitchAccessToken: 1,
+              twitchRefreshToken: 1
+            }
+          }
+        );
+
         console.log("Twitch token revoked successfully");
       } catch (twitchError) {
         console.log("Twitch token revocation failed:", twitchError.message);
@@ -917,10 +927,10 @@ app.post("/logout", async (req, res) => {
     }
 
     res.status(200).send({ message: "Logged out successfully" });
-  } catch (error) {
-    console.error("Logout error:", error);
-    res.status(500).send({ message: "Logout failed" });
-  }
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).send({ message: "Logout failed" });
+    }
 });
 
 // Route for token generation (login simulation)
