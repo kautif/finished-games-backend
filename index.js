@@ -172,9 +172,11 @@ app.get("/protected/userid", ensureAuthenticated, async (req, res) => {
       return res.status(404).send("User not found");
     }
 
+    console.log("protected userid user: ", user);
+
     res.status(200).send({
       message: "Hi, " + (user.twitchName || user.username),
-      username: user.username,
+      username: user.twitchName,
       twitchName: user.twitchName,
       twitchId: twitchId.twitchId,
       games: games.games,
@@ -375,7 +377,7 @@ app.get("/auth/twitch/callback", async (req, res) => {
     if (!user) {
       user = new User({
         twitchId: twitchUser.id,
-        twitch_default: twitchUser.display_name,
+        // twitch_default: twitchUser.display_name,
         profileImageUrl: twitchUser.profile_image_url,
         twitchName: twitchUser.display_name.toLowerCase()
       });
@@ -418,7 +420,7 @@ app.get("/auth/twitch/callback", async (req, res) => {
     });
 
     res.redirect(
-      `${frontendURL}?verified=true&auth_token=${token}&refresh_token=${refreshToken}&twitch_token=${accessToken}`
+      `${frontendURL}?verified=true&auth_token=${token}&refresh_token=${refreshToken}&twitch_token=${accessToken}&twitch_name=${encodeURIComponent(twitchUser.display_name)}&twitch_id=${encodeURIComponent(twitchUser.id)}`
     );
   } catch (error) {
     console.error(error);
@@ -435,33 +437,21 @@ app.get(
 );
 
 app.get("/games", async (req, res) => {
-  console.log("/games: ", req.query.twitchName);
-  const { twitchName, username} = req.query;
+  const { twitchName } = req.query;
 
   let gamesUser;
-  console.log("twitchName: ", twitchName);
-  console.log("username: ", username);
+
   try {
     if (twitchName !== null) {
       gamesUser = await User.findOne({ twitchName });
-      console.log("twitch gamesUser: ", gamesUser);
     } 
     
-    if (username) {
-      gamesUser = await User.findOne({ username });
-
-      // await User.findOne({
-      //   twitchName: req.query.twitchName,
-      // }).then((response) => {
-      //   // console.log("getting response: ", response);
-      //   res.json({
-      //     response,
-      //   });
-      // });
+    if (twitchName) {
+      gamesUser = await User.findOne({ twitchName });
     } else {
       return res.status(400).json({error: "No identifier provided"});
     }
-    console.log("/games user: ", gamesUser);
+
     res.json({response: gamesUser});
   } catch (err) {
     console.error("Error fetching user: ", err);
@@ -470,7 +460,6 @@ app.get("/games", async (req, res) => {
 });
 
 app.get("/filter", async (req, res) => {
-  // console.log("/games: ", req.query.twitchName);
   let search = req.query.search; 
 
   const page = parseInt(req.query.page) || 1;
@@ -569,23 +558,18 @@ app.get("/feedback", (req, res) => {
   })
 })
 
-let newGame;
 app.post("/addgame", async (req, res, next) => {
   try {
-    const {twitchName, username} = req.query;
-    const query = twitchName ? { twitchName } : {username };
+    const {twitchName, game} = req.body;
 
-    const user = await User.findOne(query);
-
-    console.log("addGame user: ", user);
+    const user = await User.findOne({twitchName});
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    console.log("checking for existing game");
     const existingGame = user.games.find(
-      (g) => g.name === games.name && g.custom_game === games.custom_game
+      (g) => g.name === game.name && g.custom_game === game.custom_game
     );
 
     if (existingGame) {
@@ -595,12 +579,12 @@ app.post("/addgame", async (req, res, next) => {
     } 
 
     console.log("adding game");
-    user.games.push(games);
+    user.games.push(game);
     console.log("saving game");
     await user.save();
 
     res.status(201).json({
-      message: `Game named ${games.name} added to ${user.twitchName || user.username}`,
+      message: `Game named ${game.name} added to ${user.twitchName || user.username}`,
     });
   } catch (err) {
     console.error("Error adding game: ", err);
@@ -724,7 +708,7 @@ app.get("/api/user", (req, res) => {
     .then(user => {
       if (user) return user;
       // if not found, check username
-      return User.findOne({ username: req.query.username });
+      return User.findOne({ twitchName: req.query.username });
     })
     .then(userFound => {
       if (userFound) {
@@ -755,14 +739,15 @@ app.get("/api/jwt/", (req, res, next) => {
 
 app.post('/register', async (req, res) => {
   try {
-    const { username_default, password, email} = req.body;
+    const { username, password, email} = req.body;
+    console.log("register body: ", username);
 
-    if (!username_default || !password || !email) {
+    if (!username || !password || !email) {
       return res.status(400).json({message: "Username, password, and email required"});
     }
 
     // Check if username already exists
-    const existingUsername = await User.findOne({username_default});
+    const existingUsername = await User.findOne({twitchName: username.toLowerCase()});
     if (existingUsername) {
       return res.status(400).json({message: "Username already exists"});
     }
@@ -776,8 +761,8 @@ app.post('/register', async (req, res) => {
     const hashedPw = await bcrypt.hash(password, 10);
     
     const user = new User({
-      username_default,
-      username: username_default.toLowerCase(),
+      twitch_default: username,
+      twitchName: username.toLowerCase(),
       password: hashedPw, 
       email,
       games: []
@@ -797,7 +782,7 @@ app.post('/register', async (req, res) => {
       message: "Account created successfully", 
       token,
       refreshToken,
-      username: user.username,
+      username: user.twitchName,
       userId: user._id
     });
   } catch (error) {
@@ -824,7 +809,7 @@ app.post("/login", async(req, res) => {
       return res.status(400).json({message: "Username and password required"});
     }
 
-    const user = await User.findOne({username: username.toLowerCase()});
+    const user = await User.findOne({twitchName: username.toLowerCase()});
     if (!user || !user.password) {
       return res.status(401).json({message: "Invalid credentials"});
     }
@@ -857,7 +842,8 @@ app.post("/login", async(req, res) => {
       message: "Login successful",
       token,
       refreshToken,
-      username: user.username,
+      username: user.twitchName,
+      twitchName: user.twitchName,
       userId: user._id
     });
   } catch (error) {
