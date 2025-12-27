@@ -72,23 +72,23 @@ function validateRecaptcha(req, res, next) {
 //                       req.body.recaptcha_challenge_field, 
 //                       req.body.recaptcha_response_field);
 
-var GoogleStrategy = require("passport-google-oauth2").Strategy;
+// var GoogleStrategy = require("passport-google-oauth2").Strategy;
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.CLIENT_ID,
-      clientSecret: process.env.CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/google/callback",
-      passReqToCallback: true,
-    },
-    function (request, accessToken, refreshToken, profile, done) {
-      User.findOrCreate({ googleId: profile.id }, function (err, user) {
-        return done(err, user);
-      });
-    }
-  )
-);
+// passport.use(
+//   new GoogleStrategy(
+//     {
+//       clientID: process.env.CLIENT_ID,
+//       clientSecret: process.env.CLIENT_SECRET,
+//       callbackURL: "http://localhost:3000/auth/google/callback",
+//       passReqToCallback: true,
+//     },
+//     function (request, accessToken, refreshToken, profile, done) {
+//       User.findOrCreate({ googleId: profile.id }, function (err, user) {
+//         return done(err, user);
+//       });
+//     }
+//   )
+// );
 
 // app.use(cors())
 
@@ -103,6 +103,7 @@ const allowedOrigins = [
 const corsOptions = {
   origin: allowedOrigins,
   optionsSuccessStatus: 200,
+  credentials: true, // Add this if you're using cookies/auth
   allowedHeaders: ["Content-Type", "Authorization"],
   exposedHeaders: ["Authorization"],
 };
