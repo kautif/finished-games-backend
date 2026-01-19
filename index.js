@@ -116,6 +116,9 @@ dbConnect();
 const backendURL = process.env.NODE_BACKEND || "http://localhost:4000";
 const frontendURL = process.env.FRONTEND_URL || "http://localhost:3000";
 
+// const backendURL = "http://localhost:4000";
+// const frontendURL = "http://localhost:3000";
+
 // app.use((req, res, next) => {
 //   // Allow to request from all origins
 //   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -461,8 +464,18 @@ app.get("/games", async (req, res) => {
 });
 
 app.get("/filter", async (req, res) => {
+  console.log("=== /filter endpoint hit ===");
+  // console.log("Full query params:", req.query);
+  
   let search = req.query.search; 
-
+  // console.log("req.query.gameType: ", req.query.gameType);
+  // console.log("req.query.rank: ", req.query.rank);
+  // console.log("req.query.twitchName: ", req.query.twitchName);
+  // console.log("req.query.search: ", req.query.search);
+  // console.log("req.query.sortFocus: ", req.query.sortFocus);
+  // console.log("req.query.sortDirection: ", req.query.sortDirection);
+  // console.log("req.query.page: ", req.query.page);
+  
   const page = parseInt(req.query.page) || 1;
   const limit = 12;
   let rank = req.query.rank;
@@ -476,58 +489,80 @@ app.get("/filter", async (req, res) => {
     twitchName: req.query.twitchName,
   }).then((response) => {
     if (response !== null) {
+      // console.log(`Found user with ${response.games.length} total games`);
+      
       response.games.map(game => {
         if (game.name.toLowerCase().includes(search.toLowerCase())) {
             games.push(game);
         }
       })
-  
+      
+      // console.log(`After search filter: ${games.length} games`);
+      games.sort(function (a, b) {
+        return a.name - b.name;
+      })
       let filteredStates = games.filter(game => game.rank === rank);
       if (rank === 'all') {
         filteredStates = games;
       }
+      
+      // console.log(`After rank filter (${rank}): ${filteredStates.length} games`);
   
       let filteredTypes = filteredStates.filter(game => game.custom_game === gameType);
   
       if (gameType === 'custom') {
-        filteredTypes = filteredStates.filter(game => game.custom_game === 'romhacks' || 
-          // game.custom_game === 'pokemon' || 
-          game.custom_game === 'other' || game.custom_game === 'mods');
+        filteredTypes = filteredStates.filter(game => game.custom_game === 'romhacks' || game.custom_game === 'other' || game.custom_game === 'mods');
       }
   
       if (gameType === 'all') {
         filteredTypes = filteredStates;
       }
 
-      console.log("filteredTypes: ", filteredTypes.length);
-      console.log("backend pages: ", Math.ceil(filteredTypes.length / 10));
+      // console.log(`After gameType filter (${gameType}): ${filteredTypes.length} games`);
+      // console.log("backend pages: ", Math.ceil(filteredTypes.length / 12));
   
       let sortedArr;
   
       if (sortDirection === 'ascending') {
-        // console.log("ascending conditional");
-        if (sortFocus === 'alpha') {
-          sortedArr = filteredTypes.sort((a,b) => (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0));
-        } else if (sortFocus === 'rating') {
-          sortedArr = filteredTypes.sort((a,b) => (a.rating > b.rating) ? 1 : ((b.rating > a.rating) ? -1 : 0));
-        } else if ( sortFocus === 'date') {
-          // console.log("date conditional");
-          sortedArr = filteredTypes.sort((a,b) => (a.date_added > b.date_added) ? 1 : ((b.date_added > a.date_added) ? -1 : 0));
-        }
-      } else {
-        if (sortFocus === 'alpha') {
-          sortedArr = filteredTypes.sort((a,b) => (a.name < b.name) ? 1 : ((a.name > b.name) ? -1 : 0))
-        } else if (sortFocus === 'rating') {
-          sortedArr = filteredTypes.sort((a,b) => (a.rating < b.rating) ? 1 : ((a.rating > b.rating) ? -1 : 0));
-        } else if (sortFocus === 'date') {
-          sortedArr = filteredTypes.sort((a,b) => (a.date_added < b.date_added) ? 1 : ((a.date_added > b.date_added) ? -1 : 0));
-        }
-      }
+  // console.log("ascending conditional");
+  if (sortFocus === 'alpha') {
+    // Case-insensitive alphabetical sort (ascending A-Z)
+    sortedArr = filteredTypes.sort((a,b) => {
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
+      return (nameA > nameB) ? 1 : ((nameB > nameA) ? -1 : 0);
+    });
+  } else if (sortFocus === 'rating') {
+    sortedArr = filteredTypes.sort((a,b) => (a.rating > b.rating) ? 1 : ((b.rating > a.rating) ? -1 : 0));
+  } else if ( sortFocus === 'date') {
+    // console.log("date conditional");
+    sortedArr = filteredTypes.sort((a,b) => (a.date_added > b.date_added) ? 1 : ((b.date_added > a.date_added) ? -1 : 0));
+  }
+} else {
+  if (sortFocus === 'alpha') {
+    // Case-insensitive alphabetical sort (descending Z-A)
+    sortedArr = filteredTypes.sort((a,b) => {
+      const nameA = a.name.toLowerCase();
+      const nameB = b.name.toLowerCase();
+      return (nameA < nameB) ? 1 : ((nameA > nameB) ? -1 : 0);
+    });
+  } else if (sortFocus === 'rating') {
+    sortedArr = filteredTypes.sort((a,b) => (a.rating < b.rating) ? 1 : ((a.rating > b.rating) ? -1 : 0));
+  } else if (sortFocus === 'date') {
+    sortedArr = filteredTypes.sort((a,b) => (a.date_added < b.date_added) ? 1 : ((a.date_added > b.date_added) ? -1 : 0));
+  }
+}
   
+      console.log("sortedArr: ", sortedArr.map(item => {
+        console.log("item: ", item.name);
+        return item.name;
+      }));
       let endIndex = page * 9 < sortedArr.length ? page * 9 : sortedArr.length;
       let startIndex = (page - 1) * limit;
       
       let paginatedGames = sortedArr.slice(startIndex, startIndex + limit);
+      
+      // console.log(`Returning ${paginatedGames.length} games for page ${page}`);
   
       // console.log(paginatedGames);
   
@@ -535,7 +570,19 @@ app.get("/filter", async (req, res) => {
         paginatedGames,
         lastPage: Math.ceil(filteredTypes.length / 12)
       });
+    } else {
+      // console.log("User not found:", req.query.twitchName);
+      res.json({
+        paginatedGames: [],
+        lastPage: 0
+      });
     }
+  }).catch(err => {
+    // console.error("Error in /filter route:", err);
+    res.status(500).json({
+      error: "Internal server error",
+      message: err.message
+    });
   });
 });
 
@@ -740,11 +787,12 @@ app.get("/api/jwt/", (req, res, next) => {
 
 app.post('/register', async (req, res) => {
   try {
-    const { username, password, email} = req.body;
+    const { username, password, email, profileImageUrl} = req.body;
     console.log("register body: ", username);
+    console.log("profileImageUrl received:", profileImageUrl); // ADD THIS LINE
 
-    if (!username || !password || !email) {
-      return res.status(400).json({message: "Username, password, and email required"});
+    if (!username || !password || !email || !profileImageUrl) {
+      return res.status(400).json({message: "Username, password, email, and profile image required"});
     }
 
     // Check if username already exists
@@ -766,6 +814,7 @@ app.post('/register', async (req, res) => {
       twitchName: username.toLowerCase(),
       password: hashedPw, 
       email,
+      profileImageUrl,
       games: []
     });
     await user.save();
